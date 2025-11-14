@@ -1,0 +1,14 @@
+@import "@picocss/pico/css/pico.min.css";
+
+.calendar-grid {
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.calendar-grid > input,
+.calendar-grid > button,
+.calendar-grid > a {
+  margin-bottom: 0;
+  white-space: nowrap;
+}

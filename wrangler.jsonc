@@ -1,0 +1,23 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "shutdown-calendar",
+	"compatibility_date": "2025-08-03",
+	"main": "./src/index.tsx",
+	"routes": [
+		{
+			"pattern": "outages-calendar.aisaiev.net",
+			"custom_domain": true
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CALENDAR_CACHE",
+			"id": "4f0673924ce94c96a4635f71044be788"
+		}
+	],
+	"triggers": {
+		"crons": [
+			"0 */1 * * *"
+		]
+	}
+}
