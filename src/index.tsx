@@ -32,6 +32,16 @@ const requireApiKey = async (c: any, next: any) => {
 
 app.use(renderer);
 
+// Serve robots.txt
+app.get("/robots.txt", (c) => {
+  const origin = new URL(c.req.url).origin;
+  return c.text(
+    `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml`,
+    200,
+    { "Content-Type": "text/plain" }
+  );
+});
+
 app.get("/", (c) => {
   const baseUrl = new URL(c.req.url).origin;
   
@@ -44,7 +54,7 @@ app.get("/", (c) => {
             
             <div class="rounded-xl border bg-card text-card-foreground shadow">
               <div class="flex flex-col space-y-1.5 p-6">
-                <h3 class="font-semibold leading-none tracking-tight text-lg">Як користуватися:</h3>
+                <h2 class="font-semibold leading-none tracking-tight text-lg">Як користуватися:</h2>
               </div>
               <div class="p-6 pt-0">
                 <ul class="space-y-2 text-sm text-muted-foreground">
@@ -108,6 +118,7 @@ app.get("/", (c) => {
                 </div>
                 <div class="p-6 pt-0">
                   <div class="flex flex-col sm:flex-row gap-2">
+                    <label for={`url-${group.id}`} class="sr-only">URL календаря для {group.name}</label>
                     <input 
                       type="text" 
                       disabled 
