@@ -1,10 +1,14 @@
 import { cloudflare } from '@cloudflare/vite-plugin'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
 import { defineConfig } from 'vite'
 import ssrPlugin from 'vite-ssr-components/plugin'
 
 export default defineConfig({
-  plugins: [cloudflare(), ssrPlugin()],
-  server: {
-    allowedHosts: ['ad5e119b84f5.ngrok-free.app']
-  }
+  plugins: [cloudflare(), ssrPlugin(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 })

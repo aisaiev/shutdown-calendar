@@ -41,7 +41,7 @@ export const renderer = jsxRenderer(({ children }) => {
                 button.textContent = 'Скопійовано';
                 setTimeout(() => {
                   button.textContent = originalText;
-                }, 1000);
+                }, 500);
               })
               .catch((err) => {
                 console.error('Failed to copy:', err);

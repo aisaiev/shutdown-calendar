@@ -36,55 +36,109 @@ app.get("/", (c) => {
   const baseUrl = new URL(c.req.url).origin;
   
   return c.render(
-    <main class="container">
-      <h1>Календар відключень електроенергії у Києві</h1>
-      <p>
-        <ul>
-          <li>
-            Знайдіть свою чергу на сайті{" "}
-            <a href="https://static.yasno.ua/kyiv/outages">Yasno</a> або{" "}
-            <a href="https://www.dtek-kem.com.ua/ua/shutdowns">ДТЕК</a>.
-          </li>
-          <li>
-            Додайте посилання у свій календар — підтримуються{" "}
-            <a href="https://support.apple.com/uk-ua/guide/iphone/iph3d1110d4/26/ios/26">
-              iOS
-            </a>
-            ,{" "}
-            <a href="https://support.google.com/calendar/answer/37118">
-              Google Calendar
-            </a>{" "}
-            і{" "}
-            <a href="https://support.microsoft.com/uk-ua/office/імпорт-календарів-до-outlook-8e8364e1-400e-4c0f-a573-fe76b5a2d379">
-              Outlook
-            </a>
-            .
-          </li>
-          <li>
-            У будь-якому іншому застосунку просто імпортуйте календар за URL або
-            .ics-файлом.
-          </li>
-        </ul>
-      </p>
-      <p>
-        💡 Якщо ви завантажуєте файл вручну, то він не оновлюватиметься
-        автоматично.
-      </p>
-      <p>
-        ❗Календар не з'явився? Перевірте, чи він увімкнений у списку
-        календарів у вашому застосунку.
-      </p>
-      {GROUPS.map((group) => (
-        <section key={group.id}>
-          <h2>{group.name}</h2>
-          <div class="grid calendar-grid">
-            <input type="text" disabled value={`${baseUrl}${group.icsUrl}`} id={`url-${group.id}`}/>
-            <button type="button" onclick={`copyToClipboard('${group.id}', event)`}>Копіювати</button>
-            <a href={group.icsUrl} download role="button">Завантажити</a>
+    <div class="min-h-screen bg-background">
+      <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="space-y-6">
+          <div class="space-y-4">
+            <h1 class="text-4xl font-bold tracking-tight">Календар відключень електроенергії у Києві</h1>
+            
+            <div class="rounded-xl border bg-card text-card-foreground shadow">
+              <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="font-semibold leading-none tracking-tight text-lg">Як користуватися:</h3>
+              </div>
+              <div class="p-6 pt-0">
+                <ul class="space-y-2 text-sm text-muted-foreground">
+                  <li class="flex items-start gap-2">
+                    <span class="text-primary mt-0.5">•</span>
+                    <span>
+                      Знайдіть свою чергу на сайті{" "}
+                      <a href="https://static.yasno.ua/kyiv/outages" class="text-primary hover:underline">Yasno</a> або{" "}
+                      <a href="https://www.dtek-kem.com.ua/ua/shutdowns" class="text-primary hover:underline">ДТЕК</a>.
+                    </span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-primary mt-0.5">•</span>
+                    <span>
+                      Додайте посилання у свій календар — підтримуються{" "}
+                      <a href="https://support.apple.com/uk-ua/guide/iphone/iph3d1110d4/26/ios/26" class="text-primary hover:underline">
+                        iOS
+                      </a>
+                      ,{" "}
+                      <a href="https://support.google.com/calendar/answer/37118" class="text-primary hover:underline">
+                        Google Calendar
+                      </a>{" "}
+                      і{" "}
+                      <a href="https://support.microsoft.com/uk-ua/office/імпорт-календарів-до-outlook-8e8364e1-400e-4c0f-a573-fe76b5a2d379" class="text-primary hover:underline">
+                        Outlook
+                      </a>
+                      .
+                    </span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <span class="text-primary mt-0.5">•</span>
+                    <span>
+                      У будь-якому іншому застосунку просто імпортуйте календар за URL або .ics-файлом.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2 text-sm">
+              <p class="flex items-center gap-2">
+                <span class="text-xl leading-none">💡</span>
+                <span class="text-muted-foreground">
+                  Якщо ви завантажуєте файл вручну, то він не оновлюватиметься автоматично.
+                </span>
+              </p>
+              <p class="flex items-center gap-2">
+                <span class="text-xl leading-none">❗</span>
+                <span class="text-muted-foreground">
+                  Календар не з'явився? Перевірте, чи він увімкнений у списку календарів у вашому застосунку.
+                </span>
+              </p>
+            </div>
           </div>
-        </section>
-      ))}
-    </main>
+
+          <div class="space-y-4">
+            {GROUPS.map((group) => (
+              <div key={group.id} class="rounded-xl border bg-card text-card-foreground shadow">
+                <div class="flex flex-col space-y-1.5 p-6">
+                  <h3 class="font-semibold leading-none tracking-tight text-xl">{group.name}</h3>
+                </div>
+                <div class="p-6 pt-0">
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text" 
+                      disabled 
+                      value={`${baseUrl}${group.icsUrl}`} 
+                      id={`url-${group.id}`}
+                      class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm flex-1"
+                    />
+                    <div class="flex gap-2">
+                      <button 
+                        type="button" 
+                        onclick={`copyToClipboard('${group.id}', event)`}
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 py-2 flex-1 sm:flex-none"
+                      >
+                        Копіювати
+                      </button>
+                      <a 
+                        href={group.icsUrl} 
+                        download
+                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 flex-1 sm:flex-none"
+                      >
+                        Завантажити
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
   );
 });
 
