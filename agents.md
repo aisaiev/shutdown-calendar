@@ -683,10 +683,10 @@ Slots describe events. `start` and `end` are minutes in a day (from 0 to 1440). 
 - `Definite` - outage event. Event should be created for this time. This event should use date from `date` property.
 
 #### Updated on
-`updatedOn` property reflects when the schedule was updated by service provider (not the last time intergation fetched the data). There should be a sensor in `sensor.py` reflecting this value.
+`updatedOn` property reflects when the schedule was updated by service provider (not the last time intergation fetched the data).
 
 #### Status
-Status property describes the type of the events and how to deal with them. There should be a sensor in `sensor.py` with corresponding status for `today`.
+Status property describes the type of the events and how to deal with them.
 Here are types of statuses:
 - `ScheduleApplies` - slots are applied. Events should be added to the calendar.
 - `WaitingForSchedule` - slots are up for a changes. Created events, but they may be changed.
