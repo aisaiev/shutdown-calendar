@@ -48,11 +48,23 @@ function scheduleToEvents(
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
 
-  // Only create events for "Definite" slots when status is ScheduleApplies or WaitingForSchedule
+  // Handle emergency shutdowns - create an all-day event
   if (daySchedule.status === 'EmergencyShutdowns') {
+    const start = minutesToDate(daySchedule.date, 0);
+    const end = minutesToDate(daySchedule.date, 1440);
+    
+    events.push({
+      group,
+      start,
+      end,
+      date: daySchedule.date,
+      status: daySchedule.status,
+    });
+    
     return events;
   }
 
+  // Only create events for "Definite" slots when status is ScheduleApplies or WaitingForSchedule
   for (const slot of daySchedule.slots) {
     if (slot.type === 'Definite') {
       const start = minutesToDate(daySchedule.date, slot.start);
@@ -97,8 +109,12 @@ export function generateICS(group: string, schedule: GroupSchedule): string {
     const dtend = formatICSDate(event.end);
     
     let summary = 'Планове відключення';
+    let description = `Планове відключення електроенергії для черги ${event.group}`;
     
-    if (event.status === 'WaitingForSchedule') {
+    if (event.status === 'EmergencyShutdowns') {
+      summary = '⚠️ Аварійні відключення';
+      description = `Аварійні відключення електроенергії для черги ${event.group}. Графік не діє.`;
+    } else if (event.status === 'WaitingForSchedule') {
       summary += ' (Орієнтовно)';
     }
 
@@ -109,7 +125,7 @@ export function generateICS(group: string, schedule: GroupSchedule): string {
     lines.push(`DTSTART:${dtstart}`);
     lines.push(`DTEND:${dtend}`);
     lines.push(`SUMMARY:${summary}`);
-    lines.push(`DESCRIPTION:Планове відключення електроенергії для черги ${event.group}`);
+    lines.push(`DESCRIPTION:${description}`);
     lines.push('URL;VALUE=URI:https://static.yasno.ua/kyiv/outages');
     lines.push(`LAST-MODIFIED:${dtstamp}`);
     lines.push('END:VEVENT');

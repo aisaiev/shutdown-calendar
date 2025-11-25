@@ -510,6 +510,169 @@ Planned Outages example response:
 }
 ```
 
+Emergency outages example response:
+
+```json
+{
+  "1.1": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "1.2": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "2.1": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "2.2": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "3.1": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "3.2": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "4.1": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "4.2": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "5.1": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "5.2": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "6.1": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  },
+  "6.2": {
+    "today": {
+      "slots": [],
+      "date": "2025-11-25T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "tomorrow": {
+      "slots": [],
+      "date": "2025-11-26T00:00:00+02:00",
+      "status": "EmergencyShutdowns"
+    },
+    "updatedOn": "2025-11-25T07:11:46+00:00"
+  }
+}
+```
+
 #### Groups
 Each group is coded as two digins `x.y`, `x` means group, `y` means subgroup. In planned outages each group have two properties `today` and `tomorrow`, describing time slots for outages.
 
