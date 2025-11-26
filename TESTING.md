@@ -35,7 +35,7 @@ Expected response:
 {
   "lastUpdate": "Never",
   "cacheEnabled": true,
-  "cronSchedule": "0 */2 * * *"
+  "cronSchedule": "*/30 * * * *"
 }
 ```
 
@@ -83,7 +83,7 @@ Now `lastUpdate` should show a recent timestamp:
 {
   "lastUpdate": "2025-11-12T14:52:30.123Z",
   "cacheEnabled": true,
-  "cronSchedule": "0 */2 * * *"
+  "cronSchedule": "*/30 * * * *"
 }
 ```
 
@@ -202,7 +202,7 @@ curl $WORKER_URL/calendar/1.1.ics
 
 ## Cron Testing
 
-In production, the cron job runs automatically every 2 hours. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
+In production, the cron job runs automatically every 30 minutes. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
 
 To see cron logs in production:
 ```bash

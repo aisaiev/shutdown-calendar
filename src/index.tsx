@@ -207,7 +207,7 @@ app.get("/api/cache/status", requireApiKey, async (c) => {
     return c.json({
       lastUpdate: lastUpdate || "Never",
       cacheEnabled: true,
-      cronSchedule: "0 */1 * * *", // Every hour
+      cronSchedule: "*/30 * * * *", // Every 30 minutes
     });
   } catch (error) {
     return c.json({ error: "Failed to get cache status" }, 500);
@@ -237,7 +237,7 @@ app.all("*", (c) => {
 export default {
   fetch: app.fetch,
 
-  // Scheduled cron handler - runs every hour
+  // Scheduled cron handler - runs every 30 minutes
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
     const cacheService = new CacheService(env.CALENDAR_CACHE);
 

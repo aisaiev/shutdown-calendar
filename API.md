@@ -59,7 +59,7 @@ Downloads a pre-generated ICS calendar file for a specific group.
 
 **Filename:** `{group}.ics` (e.g., `1.1.ics`, `2.2.ics`)
 
-**Caching:** Files are pre-generated every 2 hours. If a cached file is not available, it will be generated on-demand.
+**Caching:** Files are pre-generated every 30 minutes. If a cached file is not available, it will be generated on-demand.
 
 **Usage:**
 - Download and import into calendar applications (Google Calendar, Apple Calendar, Outlook, etc.)
@@ -83,7 +83,7 @@ x-api-key: your-api-key-here
 {
   "lastUpdate": "2025-11-12T16:00:00.000Z",
   "cacheEnabled": true,
-  "cronSchedule": "0 */2 * * *"
+  "cronSchedule": "*/30 * * * *"
 }
 ```
 
@@ -199,14 +199,14 @@ npm run deploy
 - Generates ICS calendar format (RFC 5545 compliant)
 - Timezone: Europe/Kyiv
 - **Caching:** Uses Cloudflare KV to store pre-generated ICS files
-- **Scheduled Updates:** Cron job runs every 2 hours to regenerate calendars
+- **Scheduled Updates:** Cron job runs every 30 minutes to regenerate calendars
 - **Cache TTL:** 24 hours
 
 ## Caching System
 
 To minimize API calls to the external Yasno API:
 
-1. **Scheduled Generation**: A cron job runs every 2 hours (`0 */2 * * *`) to fetch schedules and regenerate all ICS files
+1. **Scheduled Generation**: A cron job runs every 30 minutes (`*/30 * * * *`) to fetch schedules and regenerate all ICS files
 2. **KV Storage**: Pre-generated files are stored in Cloudflare KV with 24-hour expiration
 3. **Fallback**: If a requested file is not in cache, it's generated on-demand and cached
 4. **Cache Status**: Check `/api/cache/status` to see when files were last updated
