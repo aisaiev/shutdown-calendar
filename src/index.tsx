@@ -157,8 +157,10 @@ app.get("/", (c) => {
 app.get("/calendar/:filename", async (c) => {
   try {
     const filename = c.req.param("filename");
+    console.log(`[Calendar] Request for: ${filename}`);
 
     if (!filename || !filename.endsWith(".ics")) {
+      console.warn(`[Calendar] Invalid filename: ${filename}`);
       return c.text("Invalid calendar filename", 400);
     }
 
@@ -176,6 +178,7 @@ app.get("/calendar/:filename", async (c) => {
 
     // If not cached, generate on-demand and cache it
     if (!icsContent) {
+      console.log(`[Calendar] Cache miss for group ${group}, generating...`);
       const schedule = await yasnoService.getGroupSchedule(group);
 
       if (!schedule) {
@@ -186,6 +189,9 @@ app.get("/calendar/:filename", async (c) => {
 
       // Cache the generated content
       await cacheService.setCachedICS(group, icsContent);
+      console.log(`[Calendar] Generated and cached for group ${group}`);
+    } else {
+      console.log(`[Calendar] Cache hit for group ${group}`);
     }
 
     return c.body(icsContent, 200, {
@@ -201,6 +207,7 @@ app.get("/calendar/:filename", async (c) => {
 // API endpoint: Get cache status
 app.get("/api/cache/status", requireApiKey, async (c) => {
   try {
+    console.log('[API] Cache status requested');
     const cacheService = new CacheService(c.env.CALENDAR_CACHE);
     const lastUpdate = await cacheService.getLastUpdate();
 
@@ -217,8 +224,10 @@ app.get("/api/cache/status", requireApiKey, async (c) => {
 // API endpoint: Manually trigger cache regeneration
 app.get("/api/cache/regenerate", requireApiKey, async (c) => {
   try {
+    console.log('[API] Manual cache regeneration triggered');
     const cacheService = new CacheService(c.env.CALENDAR_CACHE);
     const results = await cacheService.regenerateAllCalendars();
+    console.log('[API] Cache regeneration completed:', JSON.stringify(results));
 
     return c.json({
       message: "Cache regeneration completed",
@@ -239,6 +248,9 @@ export default {
 
   // Scheduled cron handler - runs every 30 minutes
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    const startTime = Date.now();
+    console.log(`[CRON] Starting scheduled cache regeneration at ${new Date().toISOString()}`);
+    
     const cacheService = new CacheService(env.CALENDAR_CACHE);
 
     // Regenerate all calendars
@@ -246,10 +258,12 @@ export default {
       cacheService
         .regenerateAllCalendars()
         .then((results) => {
-          console.log("Scheduled cache regeneration completed:", results);
+          const duration = Date.now() - startTime;
+          console.log(`[CRON] Cache regeneration completed in ${duration}ms:`, JSON.stringify(results));
         })
         .catch((error) => {
-          console.error("Scheduled cache regeneration failed:", error);
+          const duration = Date.now() - startTime;
+          console.error(`[CRON] Cache regeneration failed after ${duration}ms:`, String(error));
         })
     );
   },
