@@ -46,6 +46,24 @@ Replace the placeholder in `wrangler.jsonc`:
 ]
 ```
 
+### 4. Generate TypeScript Types (Optional)
+
+After configuring KV namespaces, generate TypeScript type definitions:
+
+```bash
+npm run cf-typegen
+```
+
+This command:
+- Reads your `wrangler.jsonc` configuration (KV namespaces, secrets, etc.)
+- Generates TypeScript interfaces for all your bindings
+- Provides autocomplete and type safety when accessing `c.env.CALENDAR_CACHE` or `c.env.API_KEY`
+
+**When to run:**
+- After initial project setup
+- When you add/modify KV namespaces or secrets in wrangler.jsonc
+- To sync TypeScript types with your Cloudflare configuration
+
 ## API Key Setup (Security)
 
 The `/api/cache/status` and `/api/cache/regenerate` endpoints are protected with an API key.
