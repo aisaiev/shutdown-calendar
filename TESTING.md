@@ -35,7 +35,7 @@ Expected response:
 {
   "lastUpdate": "Never",
   "cacheEnabled": true,
-  "cronSchedule": "*/30 * * * *"
+  "cronSchedule": "0 * * * *"
 }
 ```
 
@@ -202,7 +202,7 @@ curl $WORKER_URL/calendar/1.1.ics
 
 ## Cron Testing
 
-In production, the cron job runs automatically every 30 minutes. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
+In production, the cron job runs automatically every hour. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
 
 To see cron logs in production:
 ```bash

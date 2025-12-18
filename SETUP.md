@@ -114,7 +114,7 @@ curl https://your-worker.workers.dev/api/cache/status
 
 ### Caching System
 
-- **Scheduled Updates**: A cron job runs every 30 minutes to fetch data from the Yasno API and regenerate all ICS files
+- **Scheduled Updates**: A cron job runs every hour to fetch data from the Yasno API and regenerate all ICS files
 - **KV Storage**: Pre-generated ICS files are stored in Cloudflare KV with 24-hour expiration
 - **Fallback**: If a cached file is missing, it will be generated on-demand and cached for future requests
 - **Reduced API Calls**: Users download pre-generated files, minimizing external API requests
@@ -127,9 +127,9 @@ curl https://your-worker.workers.dev/api/cache/status
 
 ### Cron Schedule
 
-The cron trigger is configured to run every 30 minutes:
+The cron trigger is configured to run every hour:
 ```
-*/30 * * * *
+0 * * * *
 ```
 
 You can adjust this in `wrangler.jsonc` if needed.
@@ -205,7 +205,7 @@ npx wrangler tail
 
 This shows:
 - Incoming requests
-- Cron job executions (every 30 minutes)
+- Cron job executions (every hour)
 - Console logs
 - Errors
 
@@ -221,7 +221,7 @@ Cloudflare will automatically roll out the new version.
 
 ### 7. Check Cron Status
 
-After deployment, the cron job will start running automatically every 30 minutes. You can verify it's working by:
+After deployment, the cron job will start running automatically every hour. You can verify it's working by:
 
 ```bash
 # Check when cache was last updated

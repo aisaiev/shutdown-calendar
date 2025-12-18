@@ -160,7 +160,6 @@ app.get("/calendar/:filename", async (c) => {
     console.log(`[Calendar] Request for: ${filename}`);
 
     if (!filename || !filename.endsWith(".ics")) {
-      console.warn(`[Calendar] Invalid filename: ${filename}`);
       return c.text("Invalid calendar filename", 400);
     }
 
@@ -178,7 +177,6 @@ app.get("/calendar/:filename", async (c) => {
 
     // If not cached, generate on-demand and cache it
     if (!icsContent) {
-      console.log(`[Calendar] Cache miss for group ${group}, generating...`);
       const schedule = await yasnoService.getGroupSchedule(group);
 
       if (!schedule) {
@@ -189,9 +187,6 @@ app.get("/calendar/:filename", async (c) => {
 
       // Cache the generated content
       await cacheService.setCachedICS(group, icsContent);
-      console.log(`[Calendar] Generated and cached for group ${group}`);
-    } else {
-      console.log(`[Calendar] Cache hit for group ${group}`);
     }
 
     return c.body(icsContent, 200, {
@@ -214,7 +209,7 @@ app.get("/api/cache/status", requireApiKey, async (c) => {
     return c.json({
       lastUpdate: lastUpdate || "Never",
       cacheEnabled: true,
-      cronSchedule: "*/30 * * * *", // Every 30 minutes
+      cronSchedule: "0 * * * *", // Every hour
     });
   } catch (error) {
     return c.json({ error: "Failed to get cache status" }, 500);
@@ -246,11 +241,9 @@ app.all("*", (c) => {
 export default {
   fetch: app.fetch,
 
-  // Scheduled cron handler - runs every 30 minutes
+  // Scheduled cron handler
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-    const startTime = Date.now();
-    console.log(`[CRON] Starting scheduled cache regeneration at ${new Date().toISOString()}`);
-    
+    console.log("[CRON] Starting scheduled cache regeneration");
     const cacheService = new CacheService(env.CALENDAR_CACHE);
 
     // Regenerate all calendars
@@ -258,12 +251,10 @@ export default {
       cacheService
         .regenerateAllCalendars()
         .then((results) => {
-          const duration = Date.now() - startTime;
-          console.log(`[CRON] Cache regeneration completed in ${duration}ms:`, JSON.stringify(results));
+          console.log(`[CRON] Cache regeneration completed:`, JSON.stringify(results));
         })
         .catch((error) => {
-          const duration = Date.now() - startTime;
-          console.error(`[CRON] Cache regeneration failed after ${duration}ms:`, String(error));
+          console.error(`[CRON] Cache regeneration failed:`, String(error));
         })
     );
   },

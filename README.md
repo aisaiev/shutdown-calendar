@@ -8,7 +8,7 @@ This app fetches planned electricity outage schedules from the [Yasno API](https
 
 ### Key Features
 
-- **Automatic Updates**: Cron job runs every 30 minutes to fetch the latest outage schedules
+- **Automatic Updates**: Cron job runs every hour to fetch the latest outage schedules
 - **12 Group Support**: Provides separate calendar feeds for all outage groups
 - **Smart Caching**: Pre-generates and caches ICS files in Cloudflare KV for fast delivery
 - **Emergency Status Handling**: Properly handles emergency shutdown situations
