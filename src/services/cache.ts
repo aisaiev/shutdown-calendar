@@ -1,8 +1,6 @@
 import { YasnoService } from './yasno';
 import { generateICS } from './calendar';
 
-const ALL_GROUPS = ['1.1', '1.2', '2.1', '2.2', '3.1', '3.2', '4.1', '4.2', '5.1', '5.2', '6.1', '6.2'];
-
 export class CacheService {
   constructor(private kv: KVNamespace) {}
 
@@ -40,6 +38,28 @@ export class CacheService {
   }
 
   /**
+   * Get list of available groups from cache
+   */
+  async getAvailableGroups(): Promise<string[]> {
+    const groupsJson = await this.kv.get('available_groups');
+    if (!groupsJson) {
+      return [];
+    }
+    try {
+      return JSON.parse(groupsJson);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Store list of available groups in cache
+   */
+  async setAvailableGroups(groups: string[]): Promise<void> {
+    await this.kv.put('available_groups', JSON.stringify(groups));
+  }
+
+  /**
    * Regenerate all ICS files for all groups
    */
   async regenerateAllCalendars(): Promise<{
@@ -58,8 +78,14 @@ export class CacheService {
       // Fetch all schedules once
       const allSchedules = await yasnoService.fetchPlannedOutages();
 
+      // Get available groups dynamically from API response and sort naturally
+      const availableGroups = this.sortGroupIds(Object.keys(allSchedules));
+
+      // Store the list of available groups
+      await this.setAvailableGroups(availableGroups);
+
       // Generate and cache ICS for each group
-      for (const group of ALL_GROUPS) {
+      for (const group of availableGroups) {
         try {
           const schedule = allSchedules[group];
           
@@ -85,5 +111,20 @@ export class CacheService {
     }
 
     return results;
+  }
+
+  /**
+   * Natural sort for group IDs (e.g., 1.1, 1.2, 2.1, 10.1)
+   */
+  private sortGroupIds(ids: string[]): string[] {
+    return ids.sort((a, b) => {
+      const [majorA, minorA] = a.split('.').map(Number);
+      const [majorB, minorB] = b.split('.').map(Number);
+      
+      if (majorA !== majorB) {
+        return majorA - majorB;
+      }
+      return minorA - minorB;
+    });
   }
 }

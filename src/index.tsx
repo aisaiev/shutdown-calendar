@@ -3,7 +3,7 @@ import { renderer } from "./renderer";
 import { YasnoService } from "./services/yasno";
 import { generateICS } from "./services/calendar";
 import { CacheService } from "./services/cache";
-import { GROUPS } from "./config";
+import type { GroupConfig } from "./config";
 
 type Bindings = {
   CALENDAR_CACHE: KVNamespace;
@@ -42,8 +42,17 @@ app.get("/robots.txt", (c) => {
   );
 });
 
-app.get("/", (c) => {
+app.get("/", async (c) => {
   const baseUrl = new URL(c.req.url).origin;
+  const cacheService = new CacheService(c.env.CALENDAR_CACHE);
+  
+  // Get available groups from KV cache
+  const cachedGroups = await cacheService.getAvailableGroups();
+  const groups: GroupConfig[] = cachedGroups.map(id => ({
+    id,
+    name: `Черга ${id}`,
+    icsUrl: `/calendar/${id}.ics`
+  }));
   
   return c.render(
     <div class="min-h-screen bg-background">
@@ -111,41 +120,54 @@ app.get("/", (c) => {
           </div>
 
           <div class="space-y-4">
-            {GROUPS.map((group) => (
-              <div key={group.id} class="rounded-xl border bg-card text-card-foreground shadow">
+            {groups.length === 0 ? (
+              <div class="rounded-xl border bg-card text-card-foreground shadow">
                 <div class="flex flex-col space-y-1.5 p-6">
-                  <h3 class="font-semibold leading-none tracking-tight text-xl">{group.name}</h3>
+                  <h3 class="font-semibold leading-none tracking-tight text-xl">Немає доступних черг для відображення</h3>
                 </div>
                 <div class="p-6 pt-0">
-                  <div class="flex flex-col sm:flex-row gap-2">
-                    <label for={`url-${group.id}`} class="sr-only">URL календаря для {group.name}</label>
-                    <input 
-                      type="text" 
-                      disabled 
-                      value={`${baseUrl}${group.icsUrl}`} 
-                      id={`url-${group.id}`}
-                      class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm flex-1"
-                    />
-                    <div class="flex gap-2">
-                      <button 
-                        type="button" 
-                        onclick={`copyToClipboard('${group.id}', event)`}
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 py-2 flex-1 sm:flex-none"
-                      >
-                        Копіювати
-                      </button>
-                      <a 
-                        href={group.icsUrl} 
-                        download
-                        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 flex-1 sm:flex-none"
-                      >
-                        Завантажити
-                      </a>
+                  <p class="text-sm text-muted-foreground">
+                    Календарі ще не згенеровані.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              groups.map((group) => (
+                <div key={group.id} class="rounded-xl border bg-card text-card-foreground shadow">
+                  <div class="flex flex-col space-y-1.5 p-6">
+                    <h3 class="font-semibold leading-none tracking-tight text-xl">{group.name}</h3>
+                  </div>
+                  <div class="p-6 pt-0">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                      <label for={`url-${group.id}`} class="sr-only">URL календаря для {group.name}</label>
+                      <input 
+                        type="text" 
+                        disabled 
+                        value={`${baseUrl}${group.icsUrl}`} 
+                        id={`url-${group.id}`}
+                        class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm flex-1"
+                      />
+                      <div class="flex gap-2">
+                        <button 
+                          type="button" 
+                          onclick={`copyToClipboard('${group.id}', event)`}
+                          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-4 py-2 flex-1 sm:flex-none"
+                        >
+                          Копіювати
+                        </button>
+                        <a 
+                          href={group.icsUrl} 
+                          download
+                          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 flex-1 sm:flex-none"
+                        >
+                          Завантажити
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </main>
