@@ -1,12 +1,15 @@
 ## Project Overview
+
 This project focuses on providing electricity outage schedules for Ukraine using the Yasno API https://yasno.ua. Schedules provided in ics calendar format.
 
 ## Features
+
 - Fetch electricity outage schedules from the Yasno API periodically.
 - Convert the fetched schedules into ics calendar format.
 - Store the converted schedule files by group.
 
 ## Yasno API
+
 - Regions: `https://app.yasno.ua/api/blackout-service/public/shutdowns/addresses/v2/regions`
 - Planned Outages:
   - Path: `https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/{region_id}/dsos/{dso_id}/planned-outages`
@@ -15,6 +18,7 @@ This project focuses on providing electricity outage schedules for Ukraine using
 For now only region_id=25 and dso_id=902 is supported.
 
 ### API Response
+
 Planned Outages example response:
 
 ```json
@@ -674,20 +678,25 @@ Emergency outages example response:
 ```
 
 #### Groups
+
 Each group is coded as two digins `x.y`, `x` means group, `y` means subgroup. In planned outages each group have two properties `today` and `tomorrow`, describing time slots for outages.
 
 #### Slots
+
 Slots describe events. `start` and `end` are minutes in a day (from 0 to 1440). Slots can have these types:
 
 - `NotPlaned` - no outages planned. Do not create any events from this type of slot.
 - `Definite` - outage event. Event should be created for this time. This event should use date from `date` property.
 
 #### Updated on
+
 `updatedOn` property reflects when the schedule was updated by service provider (not the last time intergation fetched the data).
 
 #### Status
+
 Status property describes the type of the events and how to deal with them.
 Here are types of statuses:
+
 - `ScheduleApplies` - slots are applied. Events should be added to the calendar.
 - `WaitingForSchedule` - slots are up for a changes. Created events, but they may be changed.
 - `EmergencyShutdowns` - slots should be displayed in the calendar, but they are not active. Emmergency is happening.

@@ -10,11 +10,11 @@ export class YasnoService {
    */
   async fetchPlannedOutages(): Promise<PlannedOutagesResponse> {
     const url = `${YASNO_API_BASE}/regions/${REGION_ID}/dsos/${DSO_ID}/planned-outages`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       });
 
@@ -22,7 +22,7 @@ export class YasnoService {
         throw new Error(`Failed to fetch outages: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json() as PlannedOutagesResponse;
+      const data = (await response.json()) as PlannedOutagesResponse;
       return data;
     } catch (error) {
       console.error('Error fetching planned outages:', error);

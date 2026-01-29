@@ -1,4 +1,4 @@
-import type { GroupSchedule, OutageSlot, CalendarEvent, DaySchedule } from '../types';
+import type { GroupSchedule, CalendarEvent, DaySchedule } from '../types';
 
 /**
  * Convert minutes from start of day to Date object
@@ -8,11 +8,11 @@ function minutesToDate(baseDate: string, minutes: number): Date {
   // Parse the ISO date string - this handles timezone correctly
   // "2025-11-12T00:00:00+02:00" is parsed as midnight in Kyiv timezone
   const date = new Date(baseDate);
-  
+
   // Add the minutes offset
   // getTime() gives us the timestamp, add minutes in milliseconds
-  const timestamp = date.getTime() + (minutes * 60 * 1000);
-  
+  const timestamp = date.getTime() + minutes * 60 * 1000;
+
   return new Date(timestamp);
 }
 
@@ -27,32 +27,28 @@ function formatICSDate(date: Date): string {
   const hours = String(date.getUTCHours()).padStart(2, '0');
   const minutes = String(date.getUTCMinutes()).padStart(2, '0');
   const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-  
+
   return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
 }
 
 /**
  * Generate a unique ID for an event using UUID
  */
-function generateEventId(group: string, date: Date, index: number): string {
+function generateEventId(): string {
   return crypto.randomUUID();
 }
 
 /**
  * Convert schedule to calendar events
  */
-function scheduleToEvents(
-  group: string,
-  daySchedule: DaySchedule,
-  day: 'today' | 'tomorrow'
-): CalendarEvent[] {
+function scheduleToEvents(group: string, daySchedule: DaySchedule): CalendarEvent[] {
   const events: CalendarEvent[] = [];
 
   // Handle emergency shutdowns - create an all-day event
   if (daySchedule.status === 'EmergencyShutdowns') {
     const start = minutesToDate(daySchedule.date, 0);
     const end = minutesToDate(daySchedule.date, 1440);
-    
+
     events.push({
       group,
       start,
@@ -60,7 +56,7 @@ function scheduleToEvents(
       date: daySchedule.date,
       status: daySchedule.status,
     });
-    
+
     return events;
   }
 
@@ -87,10 +83,7 @@ function scheduleToEvents(
  * Generate ICS calendar content from group schedule
  */
 export function generateICS(group: string, schedule: GroupSchedule): string {
-  const events: CalendarEvent[] = [
-    ...scheduleToEvents(group, schedule.today, 'today'),
-    ...scheduleToEvents(group, schedule.tomorrow, 'tomorrow'),
-  ];
+  const events: CalendarEvent[] = [...scheduleToEvents(group, schedule.today), ...scheduleToEvents(group, schedule.tomorrow)];
 
   // Build ICS file
   const lines: string[] = [
@@ -98,19 +91,19 @@ export function generateICS(group: string, schedule: GroupSchedule): string {
     'VERSION:2.0',
     'PRODID:-//aisaiev.net//Electricity Outages//EN',
     'NAME:Відключення електроенергії',
-    `X-WR-CALNAME:Відключення електроенергії`,
+    'X-WR-CALNAME:Відключення електроенергії',
     `X-WR-CALDESC:Календар планових відключень електроенергії для черги ${group}`,
   ];
 
-  events.forEach((event, index) => {
-    const eventId = generateEventId(event.group, event.start, index);
+  events.forEach((event) => {
+    const eventId = generateEventId();
     const dtstamp = formatICSDate(new Date());
     const dtstart = formatICSDate(event.start);
     const dtend = formatICSDate(event.end);
-    
+
     let summary = 'Планове відключення';
     let description = `Планове відключення електроенергії для черги ${event.group}`;
-    
+
     if (event.status === 'EmergencyShutdowns') {
       summary = '⚠️ Аварійні відключення';
       description = `Аварійні відключення електроенергії для черги ${event.group}. Графік не діє.`;
