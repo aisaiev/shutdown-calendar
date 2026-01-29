@@ -1,9 +1,12 @@
 import { Hono } from "hono";
 import { renderer } from "./renderer";
 import { YasnoService } from "./services/yasno";
+import { YasnoAddressService } from "./services/yasno-address";
 import { generateICS } from "./services/calendar";
 import { CacheService } from "./services/cache";
-import type { GroupConfig } from "./config";
+import type { GroupConfig } from "./types";
+import { AddressLookup } from "./components/AddressLookup";
+import { AddressLookupScript } from "./components/AddressLookupScript";
 
 type Bindings = {
   CALENDAR_CACHE: KVNamespace;
@@ -12,6 +15,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 const yasnoService = new YasnoService();
+const yasnoAddressService = new YasnoAddressService();
 
 // Middleware to check API key for protected endpoints
 const requireApiKey = async (c: any, next: any) => {
@@ -58,10 +62,10 @@ app.get("/", async (c) => {
     <div class="min-h-screen bg-background">
       <main class="container mx-auto px-4 py-8 max-w-4xl">
         <div class="space-y-6">
-          <div class="space-y-4">
-            <h1 class="text-4xl font-bold tracking-tight">Календар відключень електроенергії у Києві</h1>
+          <div>
+            <h1 class="text-4xl text-center font-bold tracking-tight mb-8">Календар відключень електроенергії у Києві</h1>
             
-            <div class="rounded-xl border bg-card text-card-foreground shadow">
+            <div class="rounded-xl border bg-card text-card-foreground shadow mb-6">
               <div class="flex flex-col space-y-1.5 p-6">
                 <h2 class="font-semibold leading-none tracking-tight text-lg">Як користуватися:</h2>
               </div>
@@ -72,7 +76,8 @@ app.get("/", async (c) => {
                     <span>
                       Знайдіть свою чергу на сайті{" "}
                       <a href="https://static.yasno.ua/kyiv/outages" class="text-primary hover:underline">Yasno</a> або{" "}
-                      <a href="https://www.dtek-kem.com.ua/ua/shutdowns" class="text-primary hover:underline">ДТЕК</a>.
+                      <a href="https://www.dtek-kem.com.ua/ua/shutdowns" class="text-primary hover:underline">ДТЕК</a>,
+                      або скористайтеся формою нижче, щоб визначити її за адресою.
                     </span>
                   </li>
                   <li class="flex items-start gap-2">
@@ -118,6 +123,8 @@ app.get("/", async (c) => {
               </p>
             </div>
           </div>
+
+          <AddressLookup />
 
           <div class="space-y-4">
             {groups.length === 0 ? (
@@ -171,6 +178,7 @@ app.get("/", async (c) => {
           </div>
         </div>
       </main>
+      <AddressLookupScript />
     </div>
   );
 });
@@ -252,6 +260,61 @@ app.get("/api/cache/regenerate", requireApiKey, async (c) => {
     });
   } catch (error) {
     return c.json({ error: "Failed to regenerate cache" }, 500);
+  }
+});
+
+// API endpoint: Search streets
+app.get("/api/streets/search", async (c) => {
+  try {
+    const query = c.req.query("query");
+    if (!query || query.length < 2) {
+      return c.json({ error: "Query must be at least 2 characters" }, 400);
+    }
+
+    const streets = await yasnoAddressService.searchStreets(query);
+    return c.json(streets);
+  } catch (error) {
+    console.error('[API] Street search failed:', error);
+    return c.json({ error: "Failed to search streets" }, 500);
+  }
+});
+
+// API endpoint: Search houses
+app.get("/api/houses/search", async (c) => {
+  try {
+    const streetId = c.req.query("streetId");
+    const query = c.req.query("query");
+    
+    if (!streetId) {
+      return c.json({ error: "streetId is required" }, 400);
+    }
+    if (!query) {
+      return c.json({ error: "query is required" }, 400);
+    }
+
+    const houses = await yasnoAddressService.searchHouses(Number(streetId), query);
+    return c.json(houses);
+  } catch (error) {
+    console.error('[API] House search failed:', error);
+    return c.json({ error: "Failed to search houses" }, 500);
+  }
+});
+
+// API endpoint: Get group by address
+app.get("/api/address/group", async (c) => {
+  try {
+    const streetId = c.req.query("streetId");
+    const houseId = c.req.query("houseId");
+    
+    if (!streetId || !houseId) {
+      return c.json({ error: "streetId and houseId are required" }, 400);
+    }
+
+    const group = await yasnoAddressService.getGroup(Number(streetId), Number(houseId));
+    return c.json(group);
+  } catch (error) {
+    console.error('[API] Get group failed:', error);
+    return c.json({ error: "Failed to get group" }, 500);
   }
 });
 

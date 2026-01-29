@@ -27,3 +27,25 @@ export interface CalendarEvent {
   date: string;
   status: string;
 }
+
+export interface GroupConfig {
+  id: string;
+  name: string;
+  icsUrl: string;
+}
+
+// Address lookup types
+export interface Street {
+  id: number;
+  value: string;
+}
+
+export interface House {
+  id: number;
+  value: string;
+}
+
+export interface AddressGroup {
+  group: number;
+  subgroup: number;
+}
