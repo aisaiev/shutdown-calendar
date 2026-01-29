@@ -11,6 +11,7 @@ npx wrangler kv namespace create CALENDAR_CACHE
 ```
 
 This will output something like:
+
 ```
 🌀 Creating namespace with title "shutdown-calendar-CALENDAR_CACHE"
 ✨ Success!
@@ -25,6 +26,7 @@ npx wrangler kv namespace create CALENDAR_CACHE --preview
 ```
 
 This will output:
+
 ```
 🌀 Creating namespace with title "shutdown-calendar-CALENDAR_CACHE_preview"
 ✨ Success!
@@ -55,11 +57,13 @@ npm run cf-typegen
 ```
 
 This command:
+
 - Reads your `wrangler.jsonc` configuration (KV namespaces, secrets, etc.)
 - Generates TypeScript interfaces for all your bindings
 - Provides autocomplete and type safety when accessing `c.env.CALENDAR_CACHE` or `c.env.API_KEY`
 
 **When to run:**
+
 - After initial project setup
 - When you add/modify KV namespaces or secrets in wrangler.jsonc
 - To sync TypeScript types with your Cloudflare configuration
@@ -71,6 +75,7 @@ The `/api/cache/status` and `/api/cache/regenerate` endpoints are protected with
 ### 1. Generate a Secure API Key
 
 Generate a secure random key:
+
 ```bash
 # macOS/Linux
 openssl rand -base64 32
@@ -84,11 +89,13 @@ Example output: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6==`
 ### 2. Set API Key for Production
 
 Add the API key as a Cloudflare Workers secret:
+
 ```bash
 npx wrangler secret put API_KEY
 ```
 
 You will be prompted to enter your API key:
+
 ```
 Enter a secret value: › [paste your generated key here]
 ```
@@ -96,6 +103,7 @@ Enter a secret value: › [paste your generated key here]
 This stores the API key securely in Cloudflare and makes it available to your worker via `env.API_KEY`.
 
 To verify it's set:
+
 ```bash
 npx wrangler secret list
 ```
@@ -103,11 +111,13 @@ npx wrangler secret list
 ### 3. Set API Key for Local Development
 
 Create a `.dev.vars` file in the project root:
+
 ```bash
 echo "API_KEY=your-dev-api-key-here" > .dev.vars
 ```
 
 Or manually create `.dev.vars`:
+
 ```
 API_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6==
 ```
@@ -146,6 +156,7 @@ curl https://your-worker.workers.dev/api/cache/status
 ### Cron Schedule
 
 The cron trigger is configured to run every hour:
+
 ```
 0 * * * *
 ```
@@ -167,6 +178,7 @@ npm run deploy
 ```
 
 This command will:
+
 1. Build your application with Vite
 2. Upload the worker to Cloudflare
 3. Deploy to your `*.workers.dev` subdomain
@@ -174,6 +186,7 @@ This command will:
 ### 2. Deployment Output
 
 You'll see output like:
+
 ```
 Total Upload: xx.xx KiB / gzip: xx.xx KiB
 Uploaded shutdown-calendar (x.xx sec)
@@ -210,6 +223,7 @@ To use a custom domain instead of `*.workers.dev`:
 4. Add a custom domain or route
 
 Or use wrangler CLI:
+
 ```bash
 npx wrangler publish --route "calendar.yourdomain.com/*"
 ```
@@ -217,11 +231,13 @@ npx wrangler publish --route "calendar.yourdomain.com/*"
 ### 5. Monitor Your Worker
 
 View live logs:
+
 ```bash
 npx wrangler tail
 ```
 
 This shows:
+
 - Incoming requests
 - Cron job executions (every hour)
 - Console logs
@@ -253,6 +269,7 @@ The `lastUpdate` field should show a recent timestamp after the first cron run.
 ### Login Required
 
 If you see authentication errors:
+
 ```bash
 npx wrangler login
 ```
@@ -260,6 +277,7 @@ npx wrangler login
 ### KV Namespace Not Found
 
 Make sure the KV namespace ID in `wrangler.jsonc` matches your created namespace:
+
 ```bash
 npx wrangler kv namespace list
 ```
@@ -267,6 +285,7 @@ npx wrangler kv namespace list
 ### Secret Not Set
 
 Verify your API key is configured:
+
 ```bash
 npx wrangler secret list
 ```
@@ -274,6 +293,7 @@ npx wrangler secret list
 ### View Worker Settings
 
 Check your worker configuration:
+
 ```bash
 npx wrangler whoami
 npx wrangler deployments list
@@ -282,6 +302,7 @@ npx wrangler deployments list
 ## Manual Cache Regeneration
 
 You can manually trigger cache regeneration:
+
 ```bash
 curl -H "x-api-key: your-api-key" https://your-worker.workers.dev/api/cache/regenerate
 ```

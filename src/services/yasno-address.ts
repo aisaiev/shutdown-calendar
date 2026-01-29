@@ -10,11 +10,11 @@ export class YasnoAddressService {
    */
   async searchStreets(query: string): Promise<Street[]> {
     const url = `${YASNO_API_BASE}/addresses/v2/streets?regionId=${REGION_ID}&query=${encodeURIComponent(query)}&dsoId=${DSO_ID}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       });
 
@@ -22,7 +22,7 @@ export class YasnoAddressService {
         throw new Error(`Failed to search streets: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json() as Street[];
+      const data = (await response.json()) as Street[];
       return data;
     } catch (error) {
       console.error('Error searching streets:', error);
@@ -35,11 +35,11 @@ export class YasnoAddressService {
    */
   async searchHouses(streetId: number, query: string): Promise<House[]> {
     const url = `${YASNO_API_BASE}/addresses/v2/houses?regionId=${REGION_ID}&streetId=${streetId}&query=${encodeURIComponent(query)}&dsoId=${DSO_ID}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       });
 
@@ -47,7 +47,7 @@ export class YasnoAddressService {
         throw new Error(`Failed to search houses: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json() as House[];
+      const data = (await response.json()) as House[];
       return data;
     } catch (error) {
       console.error('Error searching houses:', error);
@@ -60,11 +60,11 @@ export class YasnoAddressService {
    */
   async getGroup(streetId: number, houseId: number): Promise<AddressGroup> {
     const url = `${YASNO_API_BASE}/addresses/v2/group?regionId=${REGION_ID}&streetId=${streetId}&houseId=${houseId}&dsoId=${DSO_ID}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       });
 
@@ -72,7 +72,7 @@ export class YasnoAddressService {
         throw new Error(`Failed to get group: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json() as AddressGroup;
+      const data = (await response.json()) as AddressGroup;
       return data;
     } catch (error) {
       console.error('Error getting group:', error);

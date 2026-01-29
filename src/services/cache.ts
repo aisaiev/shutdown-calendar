@@ -88,7 +88,7 @@ export class CacheService {
       for (const group of availableGroups) {
         try {
           const schedule = allSchedules[group];
-          
+
           if (!schedule) {
             results.failed++;
             results.errors.push(`Group ${group}: Schedule not found`);
@@ -120,7 +120,7 @@ export class CacheService {
     return ids.sort((a, b) => {
       const [majorA, minorA] = a.split('.').map(Number);
       const [majorB, minorB] = b.split('.').map(Number);
-      
+
       if (majorA !== majorB) {
         return majorA - majorB;
       }

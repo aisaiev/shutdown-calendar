@@ -13,6 +13,7 @@ The server will start at `http://localhost:5173`
 ### Setup (Optional - API Key)
 
 For local development, you can optionally set an API key in `.dev.vars`:
+
 ```bash
 echo "API_KEY=my-test-key-123" > .dev.vars
 ```
@@ -22,6 +23,7 @@ If no API key is set, the protected endpoints will work without authentication.
 ### 1. Check Cache Status
 
 Open in browser or curl:
+
 ```bash
 # Without API key (works if API_KEY not set)
 curl http://localhost:5173/api/cache/status
@@ -31,6 +33,7 @@ curl -H "x-api-key: my-test-key-123" http://localhost:5173/api/cache/status
 ```
 
 Expected response:
+
 ```json
 {
   "lastUpdate": "Never",
@@ -42,11 +45,13 @@ Expected response:
 ### 2. Manually Regenerate All Calendars
 
 Open in browser:
+
 ```
 http://localhost:5173/api/cache/regenerate
 ```
 
 Or use curl:
+
 ```bash
 # Without API key (works if API_KEY not set)
 curl http://localhost:5173/api/cache/regenerate
@@ -56,6 +61,7 @@ curl -H "x-api-key: my-test-key-123" http://localhost:5173/api/cache/regenerate
 ```
 
 Expected response:
+
 ```json
 {
   "message": "Cache regeneration completed",
@@ -68,6 +74,7 @@ Expected response:
 ```
 
 This will:
+
 - Fetch data from Yasno API
 - Generate ICS files for all 12 groups (1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5.1, 5.2, 6.1, 6.2)
 - Store them in KV cache with 24-hour expiration
@@ -79,6 +86,7 @@ curl http://localhost:5173/api/cache/status
 ```
 
 Now `lastUpdate` should show a recent timestamp:
+
 ```json
 {
   "lastUpdate": "2025-11-12T14:52:30.123Z",
@@ -90,6 +98,7 @@ Now `lastUpdate` should show a recent timestamp:
 ### 4. Download a Calendar File
 
 Open in browser or use curl:
+
 ```bash
 curl http://localhost:5173/calendar/1.1.ics
 ```
@@ -99,6 +108,7 @@ This will return the cached ICS file. The first request after regeneration will 
 ### 5. Test All Groups
 
 You can test calendars for all groups:
+
 - http://localhost:5173/calendar/1.1.ics
 - http://localhost:5173/calendar/1.2.ics
 - http://localhost:5173/calendar/2.1.ics
@@ -113,11 +123,13 @@ If you request a calendar that's not in cache, it will be generated on-demand an
 ### Local Storage Location
 
 When running `npm run dev`, the local cache is stored in:
+
 ```
 .wrangler/state/v3/kv/
 ```
 
 Your cached ICS files are stored in:
+
 - **SQLite database**: `.wrangler/state/v3/kv/miniflare-KVNamespaceObject/*.sqlite`
 - **Blob files**: `.wrangler/state/v3/kv/4f0673924ce94c96a4635f71044be788/blobs/*`
 
@@ -161,6 +173,7 @@ npm run dev
 ```
 
 Then regenerate the cache:
+
 ```
 http://localhost:5173/api/cache/regenerate
 ```
@@ -205,6 +218,7 @@ curl $WORKER_URL/calendar/1.1.ics
 In production, the cron job runs automatically every hour. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
 
 To see cron logs in production:
+
 ```bash
 npx wrangler tail
 ```
