@@ -9,7 +9,8 @@ This app fetches planned electricity outage schedules from the [Yasno API](https
 ### Key Features
 
 - **Automatic Updates**: Cron job runs every hour to fetch the latest outage schedules
-- **12 Group Support**: Provides separate calendar feeds for all outage groups
+- **Dynamic Group Support**: Automatically fetches all available outage groups from Yasno
+- **Address Lookup**: Find your outage group by entering your street address and building number
 - **Smart Caching**: Pre-generates and caches ICS files in Cloudflare KV for fast delivery
 - **Emergency Status Handling**: Properly handles emergency shutdown situations
 - **Calendar Subscription**: Users can subscribe to dynamic calendars that update automatically
@@ -42,9 +43,16 @@ See [SETUP.md](SETUP.md) for detailed setup instructions including KV namespace 
 
 ## API Endpoints
 
+### Public Endpoints
+- `GET /` - Main page with group selection and address lookup
 - `GET /calendar/{group}.ics` - Download ICS file for a specific group
-- `GET /api/cache/status` - Check cache status (requires API key)
-- `GET /api/cache/regenerate` - Manually trigger cache regeneration (requires API key)
+- `GET /api/streets/search?query={text}` - Search for streets by name
+- `GET /api/houses/search?streetId={id}&query={text}` - Search for houses on a street
+- `GET /api/address/group?streetId={id}&houseId={id}` - Get outage group for an address
+
+### Protected Endpoints
+- `GET /api/cache/status` - Check cache status
+- `GET /api/cache/regenerate` - Manually trigger cache regeneration
 
 ## Documentation
 

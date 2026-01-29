@@ -136,6 +136,83 @@ x-api-key: your-api-key-here
 }
 ```
 
+### 5. Search Streets
+
+**Endpoint:** `GET /api/streets/search`
+
+Search for streets by name to find your address.
+
+**Query Parameters:**
+
+- `query` (required): Search query (minimum 2 characters)
+
+**Example:** `GET /api/streets/search?query=Хрещатик`
+
+**Response:**
+
+```json
+[
+  {
+    "id": 12345,
+    "value": "вул. Хрещатик"
+  },
+  ...
+]
+```
+
+### 6. Search Houses
+
+**Endpoint:** `GET /api/houses/search`
+
+Search for houses on a specific street.
+
+**Query Parameters:**
+
+- `streetId` (required): Street ID from the streets search
+- `query` (required): Building number or partial number
+
+**Example:** `GET /api/houses/search?streetId=12345&query=10`
+
+**Response:**
+
+```json
+[
+  {
+    "id": 67890,
+    "value": "10"
+  },
+  {
+    "id": 67891,
+    "value": "10А"
+  },
+  ...
+]
+```
+
+### 7. Get Outage Group by Address
+
+**Endpoint:** `GET /api/address/group`
+
+Get the outage group for a specific address.
+
+**Query Parameters:**
+
+- `streetId` (required): Street ID from the streets search
+- `houseId` (required): House ID from the houses search
+
+**Example:** `GET /api/address/group?streetId=12345&houseId=67890`
+
+**Response:**
+
+```json
+{
+  "group": 3,
+  "subgroup": 1
+}
+```
+
+The group and subgroup values combine to form the group identifier (e.g., "3.1").
+
 ## Calendar Event Details
 
 Each calendar event includes:
@@ -212,10 +289,12 @@ npm run deploy
 
 - Built with Hono framework for Cloudflare Workers
 - Fetches data from Yasno API: `https://app.yasno.ua/api/blackout-service/public/shutdowns`
-- Currently supports Region 25, DSO 902
+- Currently supports Region 25 (Kyiv), DSO 902
 - Generates ICS calendar format (RFC 5545 compliant)
 - Timezone: Europe/Kyiv
-- **Caching:** Uses Cloudflare KV to store pre-generated ICS files
+- **Address Lookup:** Integrates with Yasno API for street and building search
+- **Dynamic Groups:** Automatically discovers available groups from API
+- **Caching:** Uses Cloudflare KV to store pre-generated ICS files and group lists
 - **Scheduled Updates:** Cron job runs every hour to regenerate calendars
 - **Cache TTL:** 24 hours
 
@@ -224,10 +303,11 @@ npm run deploy
 To minimize API calls to the external Yasno API:
 
 1. **Scheduled Generation**: A cron job runs every hour (`0 * * * *`) to fetch schedules and regenerate all ICS files
-2. **KV Storage**: Pre-generated files are stored in Cloudflare KV with 24-hour expiration
-3. **Fallback**: If a requested file is not in cache, it's generated on-demand and cached
-4. **Cache Status**: Check `/api/cache/status` to see when files were last updated
-5. **Manual Regeneration**: Use `/api/cache/regenerate` to manually trigger cache updates
+2. **KV Storage**: Pre-generated files and group lists are stored in Cloudflare KV
+3. **Dynamic Groups**: Available groups are fetched from the API response and cached separately
+4. **Fallback**: If a requested file is not in cache, it's generated on-demand and cached
+5. **Cache Status**: Check `/api/cache/status` to see when files were last updated
+6. **Manual Regeneration**: Use `/api/cache/regenerate` to manually trigger cache updates
 
 This approach ensures:
 
@@ -235,14 +315,20 @@ This approach ensures:
 - Reduced load on the external API
 - Always-available calendars (fallback generation)
 - Regular updates without user interaction
+- Dynamic group support
 
 ## Available Groups
 
-Groups are identified by format `X.Y` where X is the main group (1-6) and Y is the subgroup (1-2):
+Groups are dynamically fetched from the Yasno API and may vary over time. The system automatically discovers and caches all available groups.
 
+Groups are identified by format `X.Y` where:
+- `X` is the main group (typically 1-6, but may include more)
+- `Y` is the subgroup (typically 1-2, but may include more)
+
+Groups are displayed in natural sorted order (1.1, 1.2, 2.1, 2.2, 3.1, etc.).
+
+Common examples include:
 - 1.1, 1.2
 - 2.1, 2.2
 - 3.1, 3.2
-- 4.1, 4.2
-- 5.1, 5.2
-- 6.1, 6.2
+- And more depending on current API availability
