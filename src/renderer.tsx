@@ -31,13 +31,6 @@ export const renderer = jsxRenderer(({ children }) => {
           content="Додайте графік планових відключень електроенергії у Києві до свого календаря. Підтримка iOS, Google Calendar, Outlook."
         />
 
-        {/* Cloudflare Web Analytics */}
-        <script
-          defer
-          src="https://static.cloudflareinsights.com/beacon.min.js"
-          data-cf-beacon='{"token": "6e5b43af8c1f49358094b46eb2c32f04"}'
-        ></script>
-
         <script
           type="module"
           dangerouslySetInnerHTML={{
@@ -71,7 +64,15 @@ export const renderer = jsxRenderer(({ children }) => {
         <ViteClient />
         <Link href="/src/style.css" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Cloudflare Web Analytics */}
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "6e5b43af8c1f49358094b46eb2c32f04"}'
+        ></script>
+      </body>
     </html>
   );
 });
