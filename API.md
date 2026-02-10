@@ -62,7 +62,7 @@ Downloads a pre-generated ICS calendar file for a specific group.
 
 **Filename:** `{group}.ics` (e.g., `1.1.ics`, `2.2.ics`)
 
-**Caching:** Files are pre-generated every hour. If a cached file is not available, it will be generated on-demand.
+**Caching:** Files are pre-generated every 30 minutes. If a cached file is not available, it will be generated on-demand.
 
 **Usage:**
 
@@ -89,7 +89,7 @@ x-api-key: your-api-key-here
 {
   "lastUpdate": "2025-11-12T16:00:00.000Z",
   "cacheEnabled": true,
-  "cronSchedule": "0 * * * *"
+  "cronSchedule": "*/30 * * * *"
 }
 ```
 
@@ -294,16 +294,16 @@ npm run deploy
 - Timezone: Europe/Kyiv
 - **Address Lookup:** Integrates with Yasno API for street and building search
 - **Dynamic Groups:** Automatically discovers available groups from API
-- **Caching:** Uses Cloudflare KV to store pre-generated ICS files and group lists
-- **Scheduled Updates:** Cron job runs every hour to regenerate calendars
+- **Caching:** Uses Cloudflare D1 database to store pre-generated ICS files and group lists
+- **Scheduled Updates:** Cron job runs every 30 minutes to regenerate calendars
 - **Cache TTL:** 24 hours
 
 ## Caching System
 
 To minimize API calls to the external Yasno API:
 
-1. **Scheduled Generation**: A cron job runs every hour (`0 * * * *`) to fetch schedules and regenerate all ICS files
-2. **KV Storage**: Pre-generated files and group lists are stored in Cloudflare KV
+1. **Scheduled Generation**: A cron job runs every 30 minutes (`*/30 * * * *`) to fetch schedules and regenerate all ICS files
+2. **D1 Storage**: Pre-generated files and group lists are stored in Cloudflare D1 database
 3. **Dynamic Groups**: Available groups are fetched from the API response and cached separately
 4. **Fallback**: If a requested file is not in cache, it's generated on-demand and cached
 5. **Cache Status**: Check `/api/cache/status` to see when files were last updated

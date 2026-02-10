@@ -8,10 +8,10 @@ This app fetches planned electricity outage schedules from the [Yasno API](https
 
 ### Key Features
 
-- **Automatic Updates**: Cron job runs every hour to fetch the latest outage schedules
+- **Automatic Updates**: Cron job runs every 30 minutes to fetch the latest outage schedules
 - **Dynamic Group Support**: Automatically fetches all available outage groups from Yasno
 - **Address Lookup**: Find your outage group by entering your street address and building number
-- **Smart Caching**: Pre-generates and caches ICS files in Cloudflare KV for fast delivery
+- **Smart Caching**: Pre-generates and caches ICS files in Cloudflare D1 database for fast delivery
 - **Emergency Status Handling**: Properly handles emergency shutdown situations
 - **Calendar Subscription**: Users can subscribe to dynamic calendars that update automatically
 - **Downloadable Files**: Also supports one-time manual downloads
@@ -31,15 +31,32 @@ npm run dev
 npm run deploy
 ```
 
-See [SETUP.md](SETUP.md) for detailed setup instructions including KV namespace and API key configuration.
+### Testing
+
+```bash
+# Run tests once
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+See [test/README.md](test/README.md) for detailed testing documentation.
+
+See [SETUP.md](SETUP.md) for detailed setup instructions including D1 database and API key configuration.
 
 ## Tech Stack
 
 - **Runtime**: Cloudflare Workers
 - **Framework**: Hono
-- **Storage**: Cloudflare KV
+- **Storage**: Cloudflare D1 Database
+- **ORM**: Drizzle ORM
 - **UI**: Tailwind CSS
 - **Build Tool**: Vite
+- **Testing**: Vitest
 
 ## API Endpoints
 

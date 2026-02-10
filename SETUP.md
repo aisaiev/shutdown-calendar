@@ -1,56 +1,56 @@
 # Setup Instructions
 
-## Cloudflare KV Namespace Setup
+## Cloudflare D1 Database Setup
 
-Before deploying, you need to create a KV namespace for caching calendar files.
+Before deploying, you need to create a D1 database for caching calendar files.
 
-### 1. Create Production KV Namespace
+### 1. Create Production D1 Database
 
 ```bash
-npx wrangler kv namespace create CALENDAR_CACHE
+npx wrangler d1 create shutdown_calendar
 ```
 
 This will output something like:
 
 ```
-🌀 Creating namespace with title "shutdown-calendar-CALENDAR_CACHE"
-✨ Success!
-Add the following to your configuration file in your kv_namespaces array:
-{ binding = "CALENDAR_CACHE", id = "abc123def456" }
+✅ Successfully created DB 'shutdown_calendar'!
+
+[[d1_databases]]
+binding = "shutdown_calendar"
+database_name = "shutdown_calendar"
+database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
-### 2. Create Preview KV Namespace (for development)
+### 2. Update wrangler.jsonc
 
-```bash
-npx wrangler kv namespace create CALENDAR_CACHE --preview
-```
-
-This will output:
-
-```
-🌀 Creating namespace with title "shutdown-calendar-CALENDAR_CACHE_preview"
-✨ Success!
-Add the following to your configuration file in your kv_namespaces array:
-{ binding = "CALENDAR_CACHE", preview_id = "xyz789abc123" }
-```
-
-### 3. Update wrangler.jsonc
-
-Replace the placeholder in `wrangler.jsonc`:
+The database configuration should already be in `wrangler.jsonc`:
 
 ```jsonc
-"kv_namespaces": [
+"d1_databases": [
   {
-    "binding": "CALENDAR_CACHE",
-    "id": "your-production-id-here",
-    "preview_id": "your-preview-id-here"
+    "binding": "shutdown_calendar",
+    "database_name": "shutdown_calendar",
+    "database_id": "your-database-id-here",
+    "migrations_dir": "drizzle/migrations"
   }
 ]
 ```
 
-### 4. Generate TypeScript Types (Optional)
+Replace `database_id` with the ID from step 1.
 
-After configuring KV namespaces, generate TypeScript type definitions:
+### 3. Run Migrations
+
+Apply database migrations to production:
+
+```bash
+npm run db:migrate:prod
+```
+
+This creates the necessary tables (`calendar_cache` and `metadata`) in your D1 database.
+
+### 4. Generate TypeScript Types
+
+After configuring D1 database, generate TypeScript type definitions:
 
 ```bash
 npm run cf-typegen
@@ -58,14 +58,14 @@ npm run cf-typegen
 
 This command:
 
-- Reads your `wrangler.jsonc` configuration (KV namespaces, secrets, etc.)
+- Reads your `wrangler.jsonc` configuration (D1 databases, secrets, etc.)
 - Generates TypeScript interfaces for all your bindings
-- Provides autocomplete and type safety when accessing `c.env.CALENDAR_CACHE` or `c.env.API_KEY`
+- Provides autocomplete and type safety when accessing `c.env.shutdown_calendar` or `c.env.API_KEY`
 
 **When to run:**
 
 - After initial project setup
-- When you add/modify KV namespaces or secrets in wrangler.jsonc
+- When you add/modify D1 databases or secrets in wrangler.jsonc
 - To sync TypeScript types with your Cloudflare configuration
 
 ## API Key Setup (Security)
@@ -142,8 +142,8 @@ curl https://your-worker.workers.dev/api/cache/status
 
 ### Caching System
 
-- **Scheduled Updates**: A cron job runs every hour to fetch data from the Yasno API and regenerate all ICS files
-- **KV Storage**: Pre-generated ICS files are stored in Cloudflare KV with 24-hour expiration
+- **Scheduled Updates**: A cron job runs every 30 minutes to fetch data from the Yasno API and regenerate all ICS files
+- **D1 Storage**: Pre-generated ICS files are stored in Cloudflare D1 database with 24-hour expiration
 - **Fallback**: If a cached file is missing, it will be generated on-demand and cached for future requests
 - **Reduced API Calls**: Users download pre-generated files, minimizing external API requests
 
@@ -155,21 +155,33 @@ curl https://your-worker.workers.dev/api/cache/status
 
 ### Cron Schedule
 
-The cron trigger is configured to run every hour:
+The cron trigger is configured to run every 30 minutes:
 
 ```
-0 * * * *
+*/30 * * * *
 ```
 
 You can adjust this in `wrangler.jsonc` if needed.
 
 ## Development
 
-For local development with `npm run dev`, the Cloudflare vite plugin will automatically create a temporary KV namespace.
+For local development with `npm run dev`, Wrangler will automatically create a local D1 database in `.wrangler/state/v3/d1/`.
+
+Run migrations locally before starting development:
+
+```bash
+npm run db:migrate
+```
+
+You can view the local database with Drizzle Studio:
+
+```bash
+npm run db:studio
+```
 
 ## Deployment
 
-Once KV namespaces and API key are configured:
+Once D1 database and API key are configured:
 
 ### 1. Build and Deploy
 
@@ -239,11 +251,11 @@ npx wrangler tail
 This shows:
 
 - Incoming requests
-- Cron job executions (every hour)
+- Cron job executions (every 30 minutes)
 - Console logs
 - Errors
 
-### 6. Update Deployment
+### 6. Update Deployment30 minutes
 
 To deploy updates after making changes:
 
@@ -255,7 +267,7 @@ Cloudflare will automatically roll out the new version.
 
 ### 7. Check Cron Status
 
-After deployment, the cron job will start running automatically every hour. You can verify it's working by:
+After deployment, the cron job will start running automatically every 30 minutes. You can verify it's working by:
 
 ```bash
 # Check when cache was last updated
@@ -276,10 +288,10 @@ npx wrangler login
 
 ### KV Namespace Not Found
 
-Make sure the KV namespace ID in `wrangler.jsonc` matches your created namespace:
+This project now uses D1 database instead of KV. Make sure the D1 database ID in `wrangler.jsonc` matches your created database:
 
 ```bash
-npx wrangler kv namespace list
+npx wrangler d1 list
 ```
 
 ### Secret Not Set

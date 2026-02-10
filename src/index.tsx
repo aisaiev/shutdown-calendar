@@ -8,9 +8,10 @@ import { CacheService } from './services/cache';
 import type { GroupConfig } from './types';
 import { AddressLookup } from './components/AddressLookup';
 import { AddressLookupScript } from './components/AddressLookupScript';
+import { createDb } from './db';
 
 type Bindings = {
-  CALENDAR_CACHE: KVNamespace;
+  shutdown_calendar: D1Database;
   API_KEY?: string;
 };
 
@@ -45,9 +46,10 @@ app.get('/robots.txt', (c) => {
 
 app.get('/', async (c) => {
   const baseUrl = new URL(c.req.url).origin;
-  const cacheService = new CacheService(c.env.CALENDAR_CACHE);
+  const db = createDb(c.env.shutdown_calendar);
+  const cacheService = new CacheService(db);
 
-  // Get available groups from KV cache
+  // Get available groups from database cache
   const cachedGroups = await cacheService.getAvailableGroups();
   const groups: GroupConfig[] = cachedGroups.map((id) => ({
     id,
@@ -199,7 +201,8 @@ app.get('/calendar/:filename', async (c) => {
       return c.text('Group parameter is required', 400);
     }
 
-    const cacheService = new CacheService(c.env.CALENDAR_CACHE);
+    const db = createDb(c.env.shutdown_calendar);
+    const cacheService = new CacheService(db);
 
     // Try to get cached ICS file
     let icsContent = await cacheService.getCachedICS(group);
@@ -232,13 +235,14 @@ app.get('/calendar/:filename', async (c) => {
 app.get('/api/cache/status', requireApiKey, async (c) => {
   try {
     console.log('[API] Cache status requested');
-    const cacheService = new CacheService(c.env.CALENDAR_CACHE);
+    const db = createDb(c.env.shutdown_calendar);
+    const cacheService = new CacheService(db);
     const lastUpdate = await cacheService.getLastUpdate();
 
     return c.json({
       lastUpdate: lastUpdate || 'Never',
       cacheEnabled: true,
-      cronSchedule: '0 * * * *', // Every hour
+      cronSchedule: '*/30 * * * *', // Every 30 minutes
     });
   } catch {
     return c.json({ error: 'Failed to get cache status' }, 500);
@@ -249,7 +253,8 @@ app.get('/api/cache/status', requireApiKey, async (c) => {
 app.get('/api/cache/regenerate', requireApiKey, async (c) => {
   try {
     console.log('[API] Manual cache regeneration triggered');
-    const cacheService = new CacheService(c.env.CALENDAR_CACHE);
+    const db = createDb(c.env.shutdown_calendar);
+    const cacheService = new CacheService(db);
     const results = await cacheService.regenerateAllCalendars();
     console.log('[API] Cache regeneration completed:', JSON.stringify(results));
 
@@ -328,7 +333,8 @@ export default {
   // Scheduled cron handler
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
     console.log('[CRON] Starting scheduled cache regeneration');
-    const cacheService = new CacheService(env.CALENDAR_CACHE);
+    const db = createDb(env.shutdown_calendar);
+    const cacheService = new CacheService(db);
 
     // Regenerate all calendars
     ctx.waitUntil(

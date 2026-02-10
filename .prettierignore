@@ -1,0 +1,15 @@
+# prod
+dist/
+dist-server/
+
+# deps
+node_modules/
+
+# auto-generated
+worker-configuration.d.ts
+
+# wrangler
+.wrangler/
+
+# test coverage
+coverage/

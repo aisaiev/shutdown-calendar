@@ -38,7 +38,7 @@ Expected response:
 {
   "lastUpdate": "Never",
   "cacheEnabled": true,
-  "cronSchedule": "0 * * * *"
+  "cronSchedule": "*/30 * * * *"
 }
 ```
 
@@ -77,7 +77,7 @@ This will:
 
 - Fetch data from Yasno API
 - Generate ICS files for all 12 groups (1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5.1, 5.2, 6.1, 6.2)
-- Store them in KV cache with 24-hour expiration
+- Store them in D1 database cache with 24-hour expiration
 
 ### 3. Check Cache Status Again
 
@@ -118,49 +118,52 @@ You can test calendars for all groups:
 
 If you request a calendar that's not in cache, it will be generated on-demand and cached automatically.
 
-## Verify KV Storage
+## Verify D1 Storage
 
 ### Local Storage Location
 
 When running `npm run dev`, the local cache is stored in:
 
 ```
-.wrangler/state/v3/kv/
+.wrangler/state/v3/d1/
 ```
 
-Your cached ICS files are stored in:
+Your cached ICS files are stored in the D1 database:
 
-- **SQLite database**: `.wrangler/state/v3/kv/miniflare-KVNamespaceObject/*.sqlite`
-- **Blob files**: `.wrangler/state/v3/kv/4f0673924ce94c96a4635f71044be788/blobs/*`
+- **SQLite database**: `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
 
-Each cached calendar file is stored as a blob with its key (e.g., `ics:1.1`, `ics:1.2`, etc.).
+Each cached calendar file is stored in the `calendar_cache` table with its group key (e.g., `1.1`, `1.2`, etc.).
 
-### View Cached Keys
+### View Cached Data
 
-You can check what's stored in KV using wrangler CLI:
+You can check what's stored in D1 using wrangler CLI:
 
 ```bash
-# List all keys in production KV
-npx wrangler kv key list --namespace-id=4f0673924ce94c96a4635f71044be788
+# List all cached calendar entries (local)
+npx wrangler d1 execute shutdown_calendar --local --command "SELECT group, createdAt, expiresAt FROM calendar_cache"
 
-# Get a specific key from production KV
-npx wrangler kv key get "ics:1.1" --namespace-id=4f0673924ce94c96a4635f71044be788
+# Get a specific calendar entry
+npx wrangler d1 execute shutdown_calendar --local --command "SELECT * FROM calendar_cache WHERE group='1.1'"
 
 # View the last_update timestamp
-npx wrangler kv key get "last_update" --namespace-id=4f0673924ce94c96a4635f71044be788
+npx wrangler d1 execute shutdown_calendar --local --command "SELECT * FROM metadata WHERE key='last_update'"
+
+# View available groups
+npx wrangler d1 execute shutdown_calendar --local --command "SELECT * FROM metadata WHERE key='available_groups'"
 ```
 
-### Inspect Local Storage
+### Inspect Local Database with Drizzle Studio
 
-To see what's in your local dev cache:
+To visually browse your local database:
 
 ```bash
-# Count cached files
-ls .wrangler/state/v3/kv/4f0673924ce94c96a4635f71044be788/blobs/ | wc -l
-
-# View cache directory size
-du -sh .wrangler/state/v3/kv/
+npm run db:studio
 ```
+
+This opens Drizzle Studio at `https://local.drizzle.studio` where you can:
+- View all tables (`calendar_cache`, `metadata`)
+- Browse data
+- Run queries
 
 ### Clear Local Cache
 
@@ -168,7 +171,8 @@ To reset your local cache:
 
 ```bash
 # Stop dev server first (Ctrl+C)
-rm -rf .wrangler/state/v3/kv/
+rm -rf .wrangler/state/v3/d1/
+npm run db:migrate  # Recreate tables
 npm run dev
 ```
 
@@ -215,7 +219,7 @@ curl $WORKER_URL/calendar/1.1.ics
 
 ## Cron Testing
 
-In production, the cron job runs automatically every hour. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
+In production, the cron job runs automatically every 30 minutes. You can't trigger it manually in local dev, but you can test the regeneration logic using the `/api/cache/regenerate` endpoint.
 
 To see cron logs in production:
 

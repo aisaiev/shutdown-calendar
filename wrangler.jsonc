@@ -9,15 +9,16 @@
       "custom_domain": true,
     },
   ],
-  "kv_namespaces": [
+  "d1_databases": [
     {
-      "binding": "CALENDAR_CACHE",
-      "id": "4f0673924ce94c96a4635f71044be788",
-      "preview_id": "000db623b7b84e0ca5ba89b512533185",
-    },
+      "binding": "shutdown_calendar",
+      "database_name": "shutdown_calendar",
+      "database_id": "fff597cb-93dd-4454-893f-f6407bbc8aef",
+      "migrations_dir": "drizzle/migrations"
+    }
   ],
   "triggers": {
-    "crons": ["0 */6 * * *"],
+    "crons": ["*/30 * * * *"],
   },
   "observability": {
     "logs": {
