@@ -61,6 +61,7 @@ See [SETUP.md](SETUP.md) for detailed setup instructions including D1 database a
 ## API Endpoints
 
 ### Public Endpoints
+
 - `GET /` - Main page with group selection and address lookup
 - `GET /calendar/{group}.ics` - Download ICS file for a specific group
 - `GET /api/streets/search?query={text}` - Search for streets by name
@@ -68,6 +69,7 @@ See [SETUP.md](SETUP.md) for detailed setup instructions including D1 database a
 - `GET /api/address/group?streetId={id}&houseId={id}` - Get outage group for an address
 
 ### Protected Endpoints
+
 - `GET /api/cache/status` - Check cache status
 - `GET /api/cache/regenerate` - Manually trigger cache regeneration
 

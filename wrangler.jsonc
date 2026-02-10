@@ -14,8 +14,8 @@
       "binding": "shutdown_calendar",
       "database_name": "shutdown_calendar",
       "database_id": "fff597cb-93dd-4454-893f-f6407bbc8aef",
-      "migrations_dir": "drizzle/migrations"
-    }
+      "migrations_dir": "drizzle/migrations",
+    },
   ],
   "triggers": {
     "crons": ["*/30 * * * *"],

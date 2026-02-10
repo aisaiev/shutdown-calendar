@@ -20,7 +20,9 @@ npm run test:coverage
 ### Unit Tests
 
 #### `calendar.test.ts`
+
 Tests for the ICS calendar generation service:
+
 - ✅ Valid ICS format generation
 - ✅ Handling different outage statuses (ScheduleApplies, EmergencyShutdowns, WaitingForSchedule)
 - ✅ Creating events only for "Definite" time slots
@@ -28,7 +30,9 @@ Tests for the ICS calendar generation service:
 - ✅ Proper calendar structure
 
 #### `cache.test.ts`
+
 Tests for the cache service with mocked D1 database:
+
 - ✅ Getting cached ICS files
 - ✅ Expiration handling
 - ✅ Setting cache entries
@@ -39,7 +43,9 @@ Tests for the cache service with mocked D1 database:
 ## Test Helpers
 
 ### `helpers.ts`
+
 Provides utilities for testing:
+
 - `createMockDb()` - Creates a mock Drizzle database for unit tests
 - `mockScheduleData` - Sample schedule data for testing
 - `mockEmergencyScheduleData` - Emergency shutdown data for testing

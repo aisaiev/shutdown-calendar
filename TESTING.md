@@ -161,6 +161,7 @@ npm run db:studio
 ```
 
 This opens Drizzle Studio at `https://local.drizzle.studio` where you can:
+
 - View all tables (`calendar_cache`, `metadata`)
 - Browse data
 - Run queries
