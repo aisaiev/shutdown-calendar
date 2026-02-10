@@ -322,12 +322,14 @@ This approach ensures:
 Groups are dynamically fetched from the Yasno API and may vary over time. The system automatically discovers and caches all available groups.
 
 Groups are identified by format `X.Y` where:
+
 - `X` is the main group (typically 1-6, but may include more)
 - `Y` is the subgroup (typically 1-2, but may include more)
 
 Groups are displayed in natural sorted order (1.1, 1.2, 2.1, 2.2, 3.1, etc.).
 
 Common examples include:
+
 - 1.1, 1.2
 - 2.1, 2.2
 - 3.1, 3.2

@@ -1,7 +1,7 @@
 import { YasnoService } from './yasno';
 import { generateICS } from './calendar';
 import { Database } from '../db';
-import { calendarCache, metadata } from '../db/schema';
+import { calendarCache, metadata, MetadataKeys } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 export class CacheService {
@@ -14,11 +14,7 @@ export class CacheService {
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
 
     // Get cached entry if it exists and hasn't expired
-    const cached = await this.db
-      .select()
-      .from(calendarCache)
-      .where(eq(calendarCache.group, group))
-      .limit(1);
+    const cached = await this.db.select().from(calendarCache).where(eq(calendarCache.group, group)).limit(1);
 
     if (cached.length === 0) {
       return null;
@@ -67,11 +63,7 @@ export class CacheService {
    * Get last update timestamp
    */
   async getLastUpdate(): Promise<string | null> {
-    const result = await this.db
-      .select()
-      .from(metadata)
-      .where(eq(metadata.key, 'last_update'))
-      .limit(1);
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.LAST_UPDATE)).limit(1);
 
     return result.length > 0 ? result[0].value : null;
   }
@@ -83,7 +75,7 @@ export class CacheService {
     await this.db
       .insert(metadata)
       .values({
-        key: 'last_update',
+        key: MetadataKeys.LAST_UPDATE,
         value: timestamp,
         updatedAt: new Date(),
       })
@@ -97,14 +89,55 @@ export class CacheService {
   }
 
   /**
+   * Get stored schedules updatedOn timestamp from Yasno API
+   */
+  async getSchedulesUpdatedOn(): Promise<string | null> {
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.SCHEDULES_UPDATED_ON)).limit(1);
+
+    return result.length > 0 ? result[0].value : null;
+  }
+
+  /**
+   * Set schedules updatedOn timestamp from Yasno API
+   */
+  async setSchedulesUpdatedOn(timestamp: string): Promise<void> {
+    await this.db
+      .insert(metadata)
+      .values({
+        key: MetadataKeys.SCHEDULES_UPDATED_ON,
+        value: timestamp,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: metadata.key,
+        set: {
+          value: timestamp,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  /**
+   * Get the latest updatedOn timestamp from all group schedules
+   */
+  private getLatestUpdatedOn(schedules: Record<string, { updatedOn: string }>): string | null {
+    const timestamps = Object.values(schedules)
+      .map((schedule) => schedule.updatedOn)
+      .filter(Boolean);
+
+    if (timestamps.length === 0) {
+      return null;
+    }
+
+    // Return the most recent timestamp
+    return timestamps.sort().reverse()[0];
+  }
+
+  /**
    * Get list of available groups from cache
    */
   async getAvailableGroups(): Promise<string[]> {
-    const result = await this.db
-      .select()
-      .from(metadata)
-      .where(eq(metadata.key, 'available_groups'))
-      .limit(1);
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.AVAILABLE_GROUPS)).limit(1);
 
     if (result.length === 0) {
       return [];
@@ -124,7 +157,7 @@ export class CacheService {
     await this.db
       .insert(metadata)
       .values({
-        key: 'available_groups',
+        key: MetadataKeys.AVAILABLE_GROUPS,
         value: JSON.stringify(groups),
         updatedAt: new Date(),
       })
@@ -144,6 +177,7 @@ export class CacheService {
     success: number;
     failed: number;
     errors: string[];
+    skipped?: boolean;
   }> {
     const yasnoService = new YasnoService();
     const results = {
@@ -155,6 +189,20 @@ export class CacheService {
     try {
       // Fetch all schedules once
       const allSchedules = await yasnoService.fetchPlannedOutages();
+
+      // Check if schedules have changed since last update
+      const latestUpdatedOn = this.getLatestUpdatedOn(allSchedules);
+      const storedUpdatedOn = await this.getSchedulesUpdatedOn();
+
+      if (latestUpdatedOn && storedUpdatedOn === latestUpdatedOn) {
+        // No changes detected, skip regeneration to save D1 writes
+        return {
+          success: 0,
+          failed: 0,
+          errors: [],
+          skipped: true,
+        };
+      }
 
       // Get available groups dynamically from API response and sort naturally
       const availableGroups = this.sortGroupIds(Object.keys(allSchedules));
@@ -182,8 +230,11 @@ export class CacheService {
         }
       }
 
-      // Update last update timestamp
+      // Update timestamps
       await this.setLastUpdate(new Date().toISOString());
+      if (latestUpdatedOn) {
+        await this.setSchedulesUpdatedOn(latestUpdatedOn);
+      }
     } catch (error) {
       results.errors.push(`Failed to fetch schedules: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

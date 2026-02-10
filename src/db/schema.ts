@@ -23,3 +23,14 @@ export const metadata = sqliteTable('metadata', {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+/**
+ * Typed metadata keys
+ */
+export const MetadataKeys = {
+  LAST_UPDATE: 'last_update',
+  SCHEDULES_UPDATED_ON: 'schedules_updated_on',
+  AVAILABLE_GROUPS: 'available_groups',
+} as const;
+
+export type MetadataKey = (typeof MetadataKeys)[keyof typeof MetadataKeys];
