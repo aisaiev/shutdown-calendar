@@ -97,6 +97,57 @@ export class CacheService {
   }
 
   /**
+   * Get stored schedules updatedOn timestamp from Yasno API
+   */
+  async getSchedulesUpdatedOn(): Promise<string | null> {
+    const result = await this.db
+      .select()
+      .from(metadata)
+      .where(eq(metadata.key, 'schedules_updated_on'))
+      .limit(1);
+
+    return result.length > 0 ? result[0].value : null;
+  }
+
+  /**
+   * Set schedules updatedOn timestamp from Yasno API
+   */
+  async setSchedulesUpdatedOn(timestamp: string): Promise<void> {
+    await this.db
+      .insert(metadata)
+      .values({
+        key: 'schedules_updated_on',
+        value: timestamp,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: metadata.key,
+        set: {
+          value: timestamp,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  /**
+   * Get the latest updatedOn timestamp from all group schedules
+   */
+  private getLatestUpdatedOn(schedules: Record<string, { updatedOn: string }>): string | null {
+    const timestamps = Object.values(schedules)
+      .map((schedule) => schedule.updatedOn)
+      .filter(Boolean);
+    
+    console.log(timestamps);
+
+    if (timestamps.length === 0) {
+      return null;
+    }
+
+    // Return the most recent timestamp
+    return timestamps.sort().reverse()[0];
+  }
+
+  /**
    * Get list of available groups from cache
    */
   async getAvailableGroups(): Promise<string[]> {
@@ -144,6 +195,7 @@ export class CacheService {
     success: number;
     failed: number;
     errors: string[];
+    skipped?: boolean;
   }> {
     const yasnoService = new YasnoService();
     const results = {
@@ -155,6 +207,20 @@ export class CacheService {
     try {
       // Fetch all schedules once
       const allSchedules = await yasnoService.fetchPlannedOutages();
+
+      // Check if schedules have changed since last update
+      const latestUpdatedOn = this.getLatestUpdatedOn(allSchedules);
+      const storedUpdatedOn = await this.getSchedulesUpdatedOn();
+
+      if (latestUpdatedOn && storedUpdatedOn === latestUpdatedOn) {
+        // No changes detected, skip regeneration to save D1 writes
+        return {
+          success: 0,
+          failed: 0,
+          errors: [],
+          skipped: true,
+        };
+      }
 
       // Get available groups dynamically from API response and sort naturally
       const availableGroups = this.sortGroupIds(Object.keys(allSchedules));
@@ -182,8 +248,11 @@ export class CacheService {
         }
       }
 
-      // Update last update timestamp
+      // Update timestamps
       await this.setLastUpdate(new Date().toISOString());
+      if (latestUpdatedOn) {
+        await this.setSchedulesUpdatedOn(latestUpdatedOn);
+      }
     } catch (error) {
       results.errors.push(`Failed to fetch schedules: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
