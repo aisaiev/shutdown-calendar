@@ -1,7 +1,7 @@
 import { YasnoService } from './yasno';
 import { generateICS } from './calendar';
 import { Database } from '../db';
-import { calendarCache, metadata } from '../db/schema';
+import { calendarCache, metadata, MetadataKeys } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 export class CacheService {
@@ -14,11 +14,7 @@ export class CacheService {
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
 
     // Get cached entry if it exists and hasn't expired
-    const cached = await this.db
-      .select()
-      .from(calendarCache)
-      .where(eq(calendarCache.group, group))
-      .limit(1);
+    const cached = await this.db.select().from(calendarCache).where(eq(calendarCache.group, group)).limit(1);
 
     if (cached.length === 0) {
       return null;
@@ -67,11 +63,7 @@ export class CacheService {
    * Get last update timestamp
    */
   async getLastUpdate(): Promise<string | null> {
-    const result = await this.db
-      .select()
-      .from(metadata)
-      .where(eq(metadata.key, 'last_update'))
-      .limit(1);
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.LAST_UPDATE)).limit(1);
 
     return result.length > 0 ? result[0].value : null;
   }
@@ -83,7 +75,7 @@ export class CacheService {
     await this.db
       .insert(metadata)
       .values({
-        key: 'last_update',
+        key: MetadataKeys.LAST_UPDATE,
         value: timestamp,
         updatedAt: new Date(),
       })
@@ -100,11 +92,7 @@ export class CacheService {
    * Get stored schedules updatedOn timestamp from Yasno API
    */
   async getSchedulesUpdatedOn(): Promise<string | null> {
-    const result = await this.db
-      .select()
-      .from(metadata)
-      .where(eq(metadata.key, 'schedules_updated_on'))
-      .limit(1);
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.SCHEDULES_UPDATED_ON)).limit(1);
 
     return result.length > 0 ? result[0].value : null;
   }
@@ -116,7 +104,7 @@ export class CacheService {
     await this.db
       .insert(metadata)
       .values({
-        key: 'schedules_updated_on',
+        key: MetadataKeys.SCHEDULES_UPDATED_ON,
         value: timestamp,
         updatedAt: new Date(),
       })
@@ -136,8 +124,6 @@ export class CacheService {
     const timestamps = Object.values(schedules)
       .map((schedule) => schedule.updatedOn)
       .filter(Boolean);
-    
-    console.log(timestamps);
 
     if (timestamps.length === 0) {
       return null;
@@ -151,11 +137,7 @@ export class CacheService {
    * Get list of available groups from cache
    */
   async getAvailableGroups(): Promise<string[]> {
-    const result = await this.db
-      .select()
-      .from(metadata)
-      .where(eq(metadata.key, 'available_groups'))
-      .limit(1);
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.AVAILABLE_GROUPS)).limit(1);
 
     if (result.length === 0) {
       return [];
@@ -175,7 +157,7 @@ export class CacheService {
     await this.db
       .insert(metadata)
       .values({
-        key: 'available_groups',
+        key: MetadataKeys.AVAILABLE_GROUPS,
         value: JSON.stringify(groups),
         updatedAt: new Date(),
       })
