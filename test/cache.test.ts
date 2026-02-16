@@ -234,9 +234,7 @@ describe('CacheService', () => {
       vi.mocked(mockDb.select).mockReturnValue({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            limit: vi.fn(() => Promise.resolve([
-              { key: 'schedules_updated_on', value: latest, updatedAt: new Date() },
-            ])),
+            limit: vi.fn(() => Promise.resolve([{ key: 'schedules_updated_on', value: latest, updatedAt: new Date() }])),
           })),
         })),
       } as unknown as ReturnType<typeof mockDb.select>);

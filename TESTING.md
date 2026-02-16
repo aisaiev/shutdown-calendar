@@ -125,12 +125,14 @@ If you request a calendar that's not in cache, it will be generated on-demand an
 When running `npm run dev`, the local cache is stored in:
 
 ```
-.wrangler/state/v3/d1/
+.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite
 ```
 
 Your cached ICS files are stored in the D1 database:
 
 - **SQLite database**: `.wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite`
+
+Note: the local Drizzle config auto-discovers the local SQLite file used by wrangler. It scans `.wrangler/state/v3/d1/miniflare-D1DatabaseObject` for `*.sqlite` file.
 
 Each cached calendar file is stored in the `calendar_cache` table with its group key (e.g., `1.1`, `1.2`, etc.).
 
