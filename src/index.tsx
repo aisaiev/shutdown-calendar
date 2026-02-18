@@ -237,7 +237,7 @@ app.get(
 
       return c.body(icsContent, 200, {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': 'attachment; filename=calendar.ics',
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Access-Control-Allow-Origin': '*',
       });
     } catch {
