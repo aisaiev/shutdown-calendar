@@ -22,7 +22,7 @@ const yasnoService = new YasnoService();
 const yasnoAddressService = new YasnoAddressService();
 
 // Zod schemas for endpoint validation
-const filenameParamsSchema = z.object({ filename: z.string().regex(/^[^/]+\.ics$/) });
+const filenameParamsSchema = z.object({ filename: z.string().regex(/^[^./][^/]*\.ics$/) });
 
 const streetsQuerySchema = z.object({ query: z.string().min(2) });
 
