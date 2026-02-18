@@ -172,12 +172,9 @@ describe('Calendar Generation', () => {
     vi.setSystemTime(fixedNow);
 
     const yesterdayDate = new Date(fixedNow.getTime() - 24 * 60 * 60 * 1000);
-    const yesterdayIso = new Date(Date.UTC(
-      yesterdayDate.getUTCFullYear(),
-      yesterdayDate.getUTCMonth(),
-      yesterdayDate.getUTCDate(),
-      0, 0, 0,
-    )).toISOString();
+    const yesterdayIso = new Date(
+      Date.UTC(yesterdayDate.getUTCFullYear(), yesterdayDate.getUTCMonth(), yesterdayDate.getUTCDate(), 0, 0, 0),
+    ).toISOString();
 
     const schedule: GroupSchedule = {
       today: {

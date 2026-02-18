@@ -9,6 +9,8 @@ import type { GroupConfig } from './types';
 import { AddressLookup } from './components/AddressLookup';
 import { AddressLookupScript } from './components/AddressLookupScript';
 import { createDb } from './db';
+import * as z from 'zod';
+import { zValidator } from '@hono/zod-validator';
 
 type Bindings = {
   shutdown_calendar: D1Database;
@@ -18,6 +20,15 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 const yasnoService = new YasnoService();
 const yasnoAddressService = new YasnoAddressService();
+
+// Zod schemas for endpoint validation
+const filenameParamsSchema = z.object({ filename: z.string().regex(/^[^/]+\.ics$/) });
+
+const streetsQuerySchema = z.object({ query: z.string().min(2) });
+
+const housesQuerySchema = z.object({ streetId: z.coerce.number().min(1), query: z.string().min(1) });
+
+const addressGroupQuerySchema = z.object({ streetId: z.coerce.number().min(1), houseId: z.coerce.number().min(1) });
 
 // Middleware to check API key for protected endpoints
 const requireApiKey = async (c: Context, next: Next) => {
@@ -185,51 +196,55 @@ app.get('/', async (c) => {
 });
 
 // Calendar endpoint: Download ICS for specific group
-app.get('/calendar/:filename', async (c) => {
-  try {
-    const filename = c.req.param('filename');
-    console.log(`[Calendar] Request for: ${filename}`);
-
-    if (!filename || !filename.endsWith('.ics')) {
-      return c.text('Invalid calendar filename', 400);
+app.get(
+  '/calendar/:filename',
+  zValidator('param', filenameParamsSchema, (result, c) => {
+    if (!result.success) {
+      return c.json({ error: 'Invalid calendar filename' }, 400);
     }
+  }),
+  async (c) => {
+    try {
+      const { filename } = c.req.valid('param');
+      console.log(`[Calendar] Request for: ${filename}`);
 
-    // Extract group from filename (e.g., "1.2.ics" -> "1.2")
-    const group = filename.slice(0, -4);
+      // Extract group from filename (e.g., "1.2.ics" -> "1.2")
+      const group = filename.slice(0, -4);
 
-    if (!group) {
-      return c.text('Group parameter is required', 400);
-    }
-
-    const db = createDb(c.env.shutdown_calendar);
-    const cacheService = new CacheService(db);
-
-    // Try to get cached ICS file
-    let icsContent = await cacheService.getCachedICS(group);
-
-    // If not cached, generate on-demand and cache it
-    if (!icsContent) {
-      const schedule = await yasnoService.getGroupSchedule(group);
-
-      if (!schedule) {
-        return c.text('Group not found', 404);
+      if (!group) {
+        return c.json({ error: 'Group parameter is required' }, 400);
       }
 
-      icsContent = generateICS(group, schedule);
+      const db = createDb(c.env.shutdown_calendar);
+      const cacheService = new CacheService(db);
 
-      // Cache the generated content
-      await cacheService.setCachedICS(group, icsContent);
+      // Try to get cached ICS file
+      let icsContent = await cacheService.getCachedICS(group);
+
+      // If not cached, generate on-demand and cache it
+      if (!icsContent) {
+        const schedule = await yasnoService.getGroupSchedule(group);
+
+        if (!schedule) {
+          return c.json({ error: 'Group not found' }, 404);
+        }
+
+        icsContent = generateICS(group, schedule);
+
+        // Cache the generated content
+        await cacheService.setCachedICS(group, icsContent);
+      }
+
+      return c.body(icsContent, 200, {
+        'Content-Type': 'text/calendar; charset=utf-8',
+        'Content-Disposition': 'attachment; filename=calendar.ics',
+        'Access-Control-Allow-Origin': '*',
+      });
+    } catch {
+      return c.json({ error: 'Failed to generate calendar' }, 500);
     }
-
-    return c.body(icsContent, 200, {
-      'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': 'attachment; filename=calendar.ics',
-      'Access-Control-Allow-Origin': '*',
-    });
-  } catch {
-    return c.text('Failed to generate calendar', 500);
-  }
-});
+  },
+);
 
 // API endpoint: Get cache status
 app.get('/api/cache/status', requireApiKey, async (c) => {
@@ -268,59 +283,65 @@ app.get('/api/cache/regenerate', requireApiKey, async (c) => {
 });
 
 // API endpoint: Search streets
-app.get('/api/streets/search', async (c) => {
-  try {
-    const query = c.req.query('query');
-    if (!query || query.length < 2) {
+app.get(
+  '/api/streets/search',
+  zValidator('query', streetsQuerySchema, (result, c) => {
+    if (!result.success) {
       return c.json({ error: 'Query must be at least 2 characters' }, 400);
     }
+  }),
+  async (c) => {
+    try {
+      const { query } = c.req.valid('query');
 
-    const streets = await yasnoAddressService.searchStreets(query);
-    return c.json(streets);
-  } catch (error) {
-    console.error('[API] Street search failed:', error);
-    return c.json({ error: 'Failed to search streets' }, 500);
-  }
-});
-
-// API endpoint: Search houses
-app.get('/api/houses/search', async (c) => {
-  try {
-    const streetId = c.req.query('streetId');
-    const query = c.req.query('query');
-
-    if (!streetId) {
-      return c.json({ error: 'streetId is required' }, 400);
+      const streets = await yasnoAddressService.searchStreets(query);
+      return c.json(streets);
+    } catch (error) {
+      console.error('[API] Street search failed:', error);
+      return c.json({ error: 'Failed to search streets' }, 500);
     }
-    if (!query) {
-      return c.json({ error: 'query is required' }, 400);
+  },
+);
+app.get(
+  '/api/houses/search',
+  zValidator('query', housesQuerySchema, (result, c) => {
+    if (!result.success) {
+      return c.json({ error: 'streetId and query are required' }, 400);
     }
+  }),
+  async (c) => {
+    try {
+      const { streetId, query } = c.req.valid('query');
 
-    const houses = await yasnoAddressService.searchHouses(Number(streetId), query);
-    return c.json(houses);
-  } catch (error) {
-    console.error('[API] House search failed:', error);
-    return c.json({ error: 'Failed to search houses' }, 500);
-  }
-});
+      const houses = await yasnoAddressService.searchHouses(streetId, query);
+      return c.json(houses);
+    } catch (error) {
+      console.error('[API] House search failed:', error);
+      return c.json({ error: 'Failed to search houses' }, 500);
+    }
+  },
+);
 
 // API endpoint: Get group by address
-app.get('/api/address/group', async (c) => {
-  try {
-    const streetId = c.req.query('streetId');
-    const houseId = c.req.query('houseId');
-
-    if (!streetId || !houseId) {
+app.get(
+  '/api/address/group',
+  zValidator('query', addressGroupQuerySchema, (result, c) => {
+    if (!result.success) {
       return c.json({ error: 'streetId and houseId are required' }, 400);
     }
+  }),
+  async (c) => {
+    try {
+      const { streetId, houseId } = c.req.valid('query');
 
-    const group = await yasnoAddressService.getGroup(Number(streetId), Number(houseId));
-    return c.json(group);
-  } catch (error) {
-    console.error('[API] Get group failed:', error);
-    return c.json({ error: 'Failed to get group' }, 500);
-  }
-});
+      const group = await yasnoAddressService.getGroup(streetId, houseId);
+      return c.json(group);
+    } catch (error) {
+      console.error('[API] Get group failed:', error);
+      return c.json({ error: 'Failed to get group' }, 500);
+    }
+  },
+);
 
 // Catch-all route: Redirect to home page for non-existing routes
 app.all('*', (c) => {

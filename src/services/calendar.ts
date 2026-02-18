@@ -105,10 +105,7 @@ function scheduleToEvents(group: string, daySchedule: DaySchedule): CalendarEven
  * Generate ICS calendar content from group schedule
  */
 export function generateICS(group: string, schedule: GroupSchedule): string {
-  const allEvents: CalendarEvent[] = [
-    ...scheduleToEvents(group, schedule.today),
-    ...scheduleToEvents(group, schedule.tomorrow),
-  ];
+  const allEvents: CalendarEvent[] = [...scheduleToEvents(group, schedule.today), ...scheduleToEvents(group, schedule.tomorrow)];
 
   // Determine whether schedule.today is exactly yesterday relative to now (in schedule timezone).
   const baseMs = new Date(schedule.today.date).getTime();
