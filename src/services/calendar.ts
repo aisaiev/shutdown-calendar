@@ -39,6 +39,28 @@ function generateEventId(): string {
 }
 
 /**
+ * Compute start (UTC ms) of the current day for the timezone described by `baseIso`.
+ * - `baseIso` is an ISO date string that may include a timezone offset (e.g. +02:00 or Z).
+ * - Returns UTC timestamp (ms) that corresponds to midnight of "today" in that timezone.
+ */
+function getStartOfCurrentDayForIso(baseIso: string): number {
+  const match = baseIso.match(/([+-])(\d{2}):?(\d{2})$/);
+  const offsetMinutes = match ? (Number(match[2]) * 60 + Number(match[3])) * (match[1] === '-' ? -1 : 1) : 0;
+
+  const now = Date.now();
+  const nowLocalMs = now + offsetMinutes * 60_000;
+  const nowLocal = new Date(nowLocalMs);
+
+  const year = nowLocal.getUTCFullYear();
+  const month = nowLocal.getUTCMonth();
+  const day = nowLocal.getUTCDate();
+
+  // local midnight in UTC ms, then convert back by removing offset
+  const localMidnightUtcMs = Date.UTC(year, month, day) - offsetMinutes * 60_000;
+  return localMidnightUtcMs;
+}
+
+/**
  * Convert schedule to calendar events
  */
 function scheduleToEvents(group: string, daySchedule: DaySchedule): CalendarEvent[] {
@@ -83,7 +105,21 @@ function scheduleToEvents(group: string, daySchedule: DaySchedule): CalendarEven
  * Generate ICS calendar content from group schedule
  */
 export function generateICS(group: string, schedule: GroupSchedule): string {
-  const events: CalendarEvent[] = [...scheduleToEvents(group, schedule.today), ...scheduleToEvents(group, schedule.tomorrow)];
+  const allEvents: CalendarEvent[] = [
+    ...scheduleToEvents(group, schedule.today),
+    ...scheduleToEvents(group, schedule.tomorrow),
+  ];
+
+  // Determine whether schedule.today is exactly yesterday relative to now (in schedule timezone).
+  const baseMs = new Date(schedule.today.date).getTime();
+  const daysSinceBase = Math.floor((Date.now() - baseMs) / 86400000);
+
+  let events: CalendarEvent[] = allEvents;
+  if (daysSinceBase === 1) {
+    // If the schedule date is yesterday, drop events that start before today's midnight in that timezone
+    const cutoffMs = getStartOfCurrentDayForIso(schedule.today.date);
+    events = allEvents.filter((ev) => ev.start.getTime() >= cutoffMs);
+  }
 
   // Build ICS file
   const lines: string[] = [

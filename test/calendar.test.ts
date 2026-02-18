@@ -164,4 +164,36 @@ describe('Calendar Generation', () => {
     expect(ics.startsWith('BEGIN:VCALENDAR')).toBe(true);
     expect(ics.endsWith('END:VCALENDAR')).toBe(true);
   });
+
+  it('should not create events for schedules dated yesterday', () => {
+    // Construct "yesterday" deterministically relative to now
+    const now = new Date();
+    const yesterdayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayIso = new Date(Date.UTC(
+      yesterdayDate.getUTCFullYear(),
+      yesterdayDate.getUTCMonth(),
+      yesterdayDate.getUTCDate(),
+      0, 0, 0,
+    )).toISOString();
+
+    const schedule: GroupSchedule = {
+      today: {
+        slots: [{ start: 360, end: 600, type: 'Definite' }],
+        date: yesterdayIso,
+        status: 'ScheduleApplies',
+      },
+      tomorrow: {
+        slots: [],
+        date: yesterdayIso,
+        status: 'ScheduleApplies',
+      },
+      updatedOn: new Date().toISOString(),
+    };
+
+    const ics = generateICS('1.1', schedule);
+
+    // There should be no VEVENT blocks because schedule is for yesterday
+    const eventCount = (ics.match(/BEGIN:VEVENT/g) || []).length;
+    expect(eventCount).toBe(0);
+  });
 });
