@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { generateICS } from '../src/services/calendar';
 import type { GroupSchedule } from '../src/types';
 
@@ -166,9 +166,12 @@ describe('Calendar Generation', () => {
   });
 
   it('should not create events for schedules dated yesterday', () => {
-    // Construct "yesterday" deterministically relative to now
-    const now = new Date();
-    const yesterdayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    // Use fake timers so "now" is deterministic and tests aren't flaky
+    vi.useFakeTimers();
+    const fixedNow = new Date('2026-02-18T12:00:00Z');
+    vi.setSystemTime(fixedNow);
+
+    const yesterdayDate = new Date(fixedNow.getTime() - 24 * 60 * 60 * 1000);
     const yesterdayIso = new Date(Date.UTC(
       yesterdayDate.getUTCFullYear(),
       yesterdayDate.getUTCMonth(),
@@ -195,5 +198,8 @@ describe('Calendar Generation', () => {
     // There should be no VEVENT blocks because schedule is for yesterday
     const eventCount = (ics.match(/BEGIN:VEVENT/g) || []).length;
     expect(eventCount).toBe(0);
+
+    // Restore real timers
+    vi.useRealTimers();
   });
 });
