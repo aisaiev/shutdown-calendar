@@ -30,6 +30,7 @@ export const metadata = sqliteTable('metadata', {
 export const MetadataKeys = {
   LAST_UPDATE: 'last_update',
   SCHEDULES_UPDATED_ON: 'schedules_updated_on',
+  SCHEDULES_LATEST_DATE: 'schedules_latest_date',
   AVAILABLE_GROUPS: 'available_groups',
 } as const;
 

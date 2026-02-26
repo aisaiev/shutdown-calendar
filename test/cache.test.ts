@@ -216,8 +216,9 @@ describe('CacheService', () => {
       vi.restoreAllMocks();
     });
 
-    it('skips regeneration when schedules are unchanged', async () => {
+    it('skips regeneration when updatedOn and schedule dates are unchanged', async () => {
       const latest = '2026-02-10T10:00:00.000Z';
+      const latestDate = '2026-02-11T00:00:00+02:00';
 
       // Mock Yasno API to return schedules with the same updatedOn
       const mockSchedules = {
@@ -230,14 +231,22 @@ describe('CacheService', () => {
 
       const spyFetch = vi.spyOn(YasnoService.prototype, 'fetchPlannedOutages').mockResolvedValue(mockSchedules as unknown as PlannedOutagesResponse);
 
-      // Mock DB to return stored schedules_updated_on equal to latest
-      vi.mocked(mockDb.select).mockReturnValue({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(() => Promise.resolve([{ key: 'schedules_updated_on', value: latest, updatedAt: new Date() }])),
+      // Mock DB to return stored fingerprints equal to latest
+      vi.mocked(mockDb.select)
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn(() => Promise.resolve([{ key: 'schedules_updated_on', value: latest, updatedAt: new Date() }])),
+            })),
           })),
-        })),
-      } as unknown as ReturnType<typeof mockDb.select>);
+        } as unknown as ReturnType<typeof mockDb.select>)
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn(() => Promise.resolve([{ key: 'schedules_latest_date', value: latestDate, updatedAt: new Date() }])),
+            })),
+          })),
+        } as unknown as ReturnType<typeof mockDb.select>);
 
       const result = await cacheService.regenerateAllCalendars();
       expect(result.skipped).toBe(true);
@@ -246,14 +255,15 @@ describe('CacheService', () => {
       spyFetch.mockRestore();
     });
 
-    it('persists schedules_updated_on after successful regeneration', async () => {
+    it('persists updatedOn and latest schedule date after successful regeneration', async () => {
       const latest = '2026-02-10T11:00:00.000Z';
+      const latestDate = '2026-02-12T00:00:00+02:00';
 
       // Mock Yasno API to return schedules with a new updatedOn
       const mockSchedules = {
         '1.1': {
-          today: { slots: [], date: '2026-02-10T00:00:00+02:00', status: 'ScheduleApplies' },
-          tomorrow: { slots: [], date: '2026-02-11T00:00:00+02:00', status: 'WaitingForSchedule' },
+          today: { slots: [], date: '2026-02-11T00:00:00+02:00', status: 'ScheduleApplies' },
+          tomorrow: { slots: [], date: latestDate, status: 'WaitingForSchedule' },
           updatedOn: latest,
         },
       } as unknown as PlannedOutagesResponse;
@@ -270,6 +280,10 @@ describe('CacheService', () => {
       } as unknown as ReturnType<typeof mockDb.select>);
 
       const setSchedulesSpy = vi.spyOn(cacheService as unknown as { setSchedulesUpdatedOn: (s: string) => Promise<void> }, 'setSchedulesUpdatedOn');
+      const setScheduleDateSpy = vi.spyOn(
+        cacheService as unknown as { setSchedulesLatestDate: (s: string) => Promise<void> },
+        'setSchedulesLatestDate',
+      );
 
       const mockInsert = vi.fn(() => ({
         values: vi.fn(() => ({
@@ -281,6 +295,52 @@ describe('CacheService', () => {
       const result = await cacheService.regenerateAllCalendars();
       expect(result.skipped).not.toBe(true);
       expect(setSchedulesSpy).toHaveBeenCalledWith(latest);
+      expect(setScheduleDateSpy).toHaveBeenCalledWith(latestDate);
+
+      spyFetch.mockRestore();
+    });
+
+    it('regenerates when date advances but updatedOn stays the same', async () => {
+      const latest = '2026-02-10T10:00:00.000Z';
+      const storedDate = '2026-02-11T00:00:00+02:00';
+      const newDate = '2026-02-12T00:00:00+02:00';
+
+      const mockSchedules = {
+        '1.1': {
+          today: { slots: [], date: '2026-02-11T00:00:00+02:00', status: 'ScheduleApplies' },
+          tomorrow: { slots: [], date: newDate, status: 'WaitingForSchedule' },
+          updatedOn: latest,
+        },
+      } as unknown as PlannedOutagesResponse;
+
+      const spyFetch = vi.spyOn(YasnoService.prototype, 'fetchPlannedOutages').mockResolvedValue(mockSchedules as unknown as PlannedOutagesResponse);
+
+      // Stored updatedOn matches but date differs -> should regenerate
+      vi.mocked(mockDb.select)
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn(() => Promise.resolve([{ key: 'schedules_updated_on', value: latest, updatedAt: new Date() }])),
+            })),
+          })),
+        } as unknown as ReturnType<typeof mockDb.select>)
+        .mockReturnValueOnce({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn(() => Promise.resolve([{ key: 'schedules_latest_date', value: storedDate, updatedAt: new Date() }])),
+            })),
+          })),
+        } as unknown as ReturnType<typeof mockDb.select>);
+
+      const mockInsert = vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => Promise.resolve()),
+        })),
+      }));
+      vi.mocked(mockDb.insert).mockReturnValue(mockInsert() as unknown as ReturnType<typeof mockDb.insert>);
+
+      const result = await cacheService.regenerateAllCalendars();
+      expect(result.skipped).not.toBe(true);
 
       spyFetch.mockRestore();
     });

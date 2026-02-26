@@ -3,6 +3,7 @@ import { generateICS } from './calendar';
 import { Database } from '../db';
 import { calendarCache, metadata, MetadataKeys } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { PlannedOutagesResponse } from '@/types';
 
 export class CacheService {
   constructor(private db: Database) {}
@@ -118,14 +119,43 @@ export class CacheService {
   }
 
   /**
+   * Get stored latest schedule date (max of today/tomorrow dates)
+   */
+  async getSchedulesLatestDate(): Promise<string | null> {
+    const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.SCHEDULES_LATEST_DATE)).limit(1);
+
+    return result.length ? result[0].value : null;
+  }
+
+  /**
+   * Set stored latest schedule date
+   */
+  async setSchedulesLatestDate(date: string): Promise<void> {
+    await this.db
+      .insert(metadata)
+      .values({
+        key: MetadataKeys.SCHEDULES_LATEST_DATE,
+        value: date,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: metadata.key,
+        set: {
+          value: date,
+          updatedAt: new Date(),
+        },
+      });
+  }
+
+  /**
    * Get the latest updatedOn timestamp from all group schedules
    */
-  private getLatestUpdatedOn(schedules: Record<string, { updatedOn: string }>): string | null {
+  private getLatestUpdatedOn(schedules: PlannedOutagesResponse): string | null {
     const timestamps = Object.values(schedules)
       .map((schedule) => schedule.updatedOn)
       .filter(Boolean);
 
-    if (timestamps.length === 0) {
+    if (!timestamps.length) {
       return null;
     }
 
@@ -134,12 +164,28 @@ export class CacheService {
   }
 
   /**
+   * Get the latest schedule date across all groups (considers today and tomorrow)
+   */
+  private getLatestScheduleDate(schedules: PlannedOutagesResponse): string | null {
+    const dates = Object.values(schedules)
+      .flatMap((schedule) => [schedule.today?.date, schedule.tomorrow?.date])
+      .filter(Boolean);
+
+    if (!dates.length) {
+      return null;
+    }
+
+    // Return the most recent date
+    return dates.sort().reverse()[0];
+  }
+
+  /**
    * Get list of available groups from cache
    */
   async getAvailableGroups(): Promise<string[]> {
     const result = await this.db.select().from(metadata).where(eq(metadata.key, MetadataKeys.AVAILABLE_GROUPS)).limit(1);
 
-    if (result.length === 0) {
+    if (!result.length) {
       return [];
     }
 
@@ -192,9 +238,11 @@ export class CacheService {
 
       // Check if schedules have changed since last update
       const latestUpdatedOn = this.getLatestUpdatedOn(allSchedules);
+      const latestScheduleDate = this.getLatestScheduleDate(allSchedules);
       const storedUpdatedOn = await this.getSchedulesUpdatedOn();
+      const storedScheduleDate = await this.getSchedulesLatestDate();
 
-      if (latestUpdatedOn && storedUpdatedOn === latestUpdatedOn) {
+      if (latestUpdatedOn && latestScheduleDate && storedUpdatedOn === latestUpdatedOn && storedScheduleDate === latestScheduleDate) {
         // No changes detected, skip regeneration to save D1 writes
         return {
           success: 0,
@@ -234,6 +282,9 @@ export class CacheService {
       await this.setLastUpdate(new Date().toISOString());
       if (latestUpdatedOn) {
         await this.setSchedulesUpdatedOn(latestUpdatedOn);
+      }
+      if (latestScheduleDate) {
+        await this.setSchedulesLatestDate(latestScheduleDate);
       }
     } catch (error) {
       results.errors.push(`Failed to fetch schedules: ${error instanceof Error ? error.message : 'Unknown error'}`);
