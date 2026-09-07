@@ -52,7 +52,11 @@ app.use(renderer);
 // Serve robots.txt
 app.get('/robots.txt', (c) => {
   const origin = new URL(c.req.url).origin;
-  return c.text(`User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml`, 200, { 'Content-Type': 'text/plain' });
+  return c.text(
+    `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${origin}/sitemap.xml`,
+    200,
+    { 'Content-Type': 'text/plain' },
+  );
 });
 
 app.get('/', async (c) => {
